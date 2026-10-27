@@ -282,7 +282,7 @@
       "apps/crm/src/app/(app)/leads/[id]/page.tsx",
       "apps/crm/e2e/leads.spec.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T4",
