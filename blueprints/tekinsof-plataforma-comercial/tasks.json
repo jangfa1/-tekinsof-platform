@@ -93,7 +93,7 @@
       "packages/core/test/permissions.test.ts",
       "packages/core/test/users.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T4",
