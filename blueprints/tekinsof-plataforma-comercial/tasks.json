@@ -411,7 +411,7 @@
       "apps/crm/src/components/pipeline-board.tsx",
       "apps/crm/src/app/(app)/oportunidades/[id]/page.tsx"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T2",
