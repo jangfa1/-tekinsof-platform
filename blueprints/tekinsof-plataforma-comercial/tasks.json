@@ -442,7 +442,7 @@
       "packages/core/src/sales/quotes.ts",
       "packages/core/test/quotes.test.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T3",
