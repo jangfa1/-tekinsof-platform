@@ -155,7 +155,7 @@
       "apps/crm/src/app/(app)/leads/page.tsx",
       "apps/crm/e2e/shell.spec.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T6",

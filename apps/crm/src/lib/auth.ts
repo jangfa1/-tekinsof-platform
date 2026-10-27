@@ -34,6 +34,8 @@ export const auth = betterAuth({
     },
   }),
   session: { expiresIn: 60 * 60 * 12, updateAge: 60 * 60 },
+  // E2E signs many users in within seconds; parseEnv forbids AUTH_TEST_MODE in production.
+  rateLimit: { enabled: !env.AUTH_TEST_MODE },
   user: {
     additionalFields: {
       role: { type: "string", required: false, defaultValue: "ventas", input: env.AUTH_TEST_MODE },
