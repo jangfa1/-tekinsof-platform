@@ -14,7 +14,10 @@ export function proxy(request: NextRequest) {
     login.searchParams.set("next", pathname);
     return NextResponse.redirect(login);
   }
-  return NextResponse.next();
+  // The (app) layout reads this to deny a route before streaming starts, so the 404 status is real.
+  const forwarded = new Headers(request.headers);
+  forwarded.set("x-pathname", pathname);
+  return NextResponse.next({ request: { headers: forwarded } });
 }
 
 export const config = { matcher: ["/((?!api|login|_next|favicon.ico).*)"] };

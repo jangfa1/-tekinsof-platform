@@ -186,7 +186,7 @@
       "apps/crm/src/app/(app)/error.tsx",
       "apps/crm/e2e/users.spec.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T1",

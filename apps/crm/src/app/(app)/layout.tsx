@@ -14,7 +14,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { cookies, headers } from "next/headers";
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { type ReactNode, Suspense } from "react";
 import { requireActor, type SessionActor } from "@/lib/actor";
 import { auth } from "@/lib/auth";
@@ -100,8 +100,17 @@ function ContentSkeleton() {
   );
 }
 
+// Route-level gate from the same map as the navigation. It runs here, before the Suspense boundary
+// streams, so a denied page answers with a real 404 status; pages still check their own permission.
+async function denyUnpermittedRoute(actor: SessionActor) {
+  const pathname = (await headers()).get("x-pathname") ?? "";
+  const item = navItems.find((nav) => pathname === nav.href || pathname.startsWith(`${nav.href}/`));
+  if (item && !can(actor, item.permission)) notFound();
+}
+
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const actor = await requireActor();
+  await denyUnpermittedRoute(actor);
   return (
     <>
       <a
