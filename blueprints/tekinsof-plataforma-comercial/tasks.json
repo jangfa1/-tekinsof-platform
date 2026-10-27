@@ -250,7 +250,7 @@
       "apps/crm/src/app/api/public/leads/route.ts",
       "apps/crm/e2e/public-leads.spec.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T3",
