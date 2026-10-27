@@ -123,7 +123,7 @@
       "apps/crm/src/app/login/page.tsx",
       "apps/crm/e2e/auth.spec.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T5",
