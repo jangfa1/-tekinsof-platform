@@ -217,7 +217,7 @@
       "apps/crm/src/app/(app)/empresas/[id]/page.tsx",
       "apps/crm/src/app/(app)/contactos/page.tsx"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E2-T2",
