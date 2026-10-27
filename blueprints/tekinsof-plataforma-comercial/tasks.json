@@ -474,7 +474,7 @@
       "apps/crm/src/app/(app)/cotizaciones/[id]/page.tsx",
       "apps/crm/e2e/quotes.spec.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T4",
