@@ -1,21 +1,194 @@
 ---
-const title = "Tekinsof Consulting | Tecnología y marketing digital para empresas";
-const description =
-  "Desarrollo de software, integración ERP/CRM, Power BI, Microsoft 365, ciberseguridad y marketing digital para empresas en Perú.";
+import LeadForm from "../components/LeadForm.tsx";
+import Base from "../layouts/Base.astro";
+
+const apiUrl = process.env.PUBLIC_LEADS_API_URL || "http://localhost:3000/api/public/leads";
+const siteKey = process.env.PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
+const whatsappNumber = process.env.PUBLIC_WHATSAPP_NUMBER || "51981053022";
+const bookingsUrl = process.env.PUBLIC_BOOKINGS_URL || "#contacto";
+const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hola Tekinsof, quiero información (/)")}`;
+
+// Static focus list; step 18 replaces it with the published catalog (same slugs as the seed).
+const groups = [
+  {
+    title: "Tecnología",
+    services: [
+      {
+        slug: "desarrollo-de-software",
+        name: "Desarrollo de Software",
+        line: "Sistemas a medida que se adaptan a tu operación.",
+      },
+      {
+        slug: "integracion-erp",
+        name: "Integración ERP",
+        line: "Conectamos tu ERP con ventas, logística y finanzas.",
+      },
+      {
+        slug: "integracion-crm",
+        name: "Integración CRM",
+        line: "Tu CRM sincronizado con el resto de la empresa.",
+      },
+      {
+        slug: "automatizacion-de-procesos",
+        name: "Automatización de Procesos",
+        line: "Menos tareas manuales, menos errores.",
+      },
+      {
+        slug: "microsoft-365",
+        name: "Microsoft 365",
+        line: "Implementación, migración y adopción de M365.",
+      },
+      {
+        slug: "power-bi-y-analitica",
+        name: "Power BI y Analítica",
+        line: "Tableros que muestran cómo va tu negocio hoy.",
+      },
+      { slug: "big-data", name: "Big Data", line: "Datos de muchas fuentes, listos para decidir." },
+      {
+        slug: "infraestructura-tecnologica",
+        name: "Infraestructura Tecnológica",
+        line: "Redes, servidores y nube que no se caen.",
+      },
+      {
+        slug: "ciberseguridad",
+        name: "Ciberseguridad",
+        line: "Protegemos tus datos, cuentas y equipos.",
+      },
+      {
+        slug: "inteligencia-artificial-para-negocios",
+        name: "Inteligencia Artificial aplicada a negocios",
+        line: "IA práctica para vender y operar mejor.",
+      },
+    ],
+  },
+  {
+    title: "Marketing digital",
+    services: [
+      {
+        slug: "marketing-digital",
+        name: "Marketing Digital",
+        line: "Estrategia y campañas en Google, Meta, LinkedIn y TikTok.",
+      },
+      {
+        slug: "branding-corporativo",
+        name: "Branding Corporativo",
+        line: "Una marca clara que inspira confianza.",
+      },
+      {
+        slug: "automatizacion-comercial",
+        name: "Automatización Comercial",
+        line: "Seguimiento de prospectos sin que se escape ninguno.",
+      },
+      {
+        slug: "whatsapp-business",
+        name: "WhatsApp Business",
+        line: "Atiende y vende por el canal que tus clientes usan.",
+      },
+    ],
+  },
+];
+const services = groups.flatMap((group) =>
+  group.services.map(({ slug, name }) => ({ slug, name })),
+);
+
+const reasons = [
+  {
+    title: "Un solo equipo",
+    text: "Tecnología y marketing digital trabajando juntos, sin intermediarios.",
+  },
+  {
+    title: "Especialistas Microsoft",
+    text: "Experiencia en Microsoft 365, Power BI y Azure para empresas.",
+  },
+  { title: "Respuesta rápida", text: "Te respondemos en menos de 4 horas laborables." },
+];
 ---
 
-<html lang="es-PE">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-    <meta name="description" content={description} />
-    <link rel="canonical" href="https://tekinsof.com/" />
-  </head>
-  <body>
-    <main>
-      <h1>Tekinsof Consulting</h1>
-      <p>Tu mejor agente de cambios tecnológicos.</p>
-    </main>
-  </body>
-</html>
+<Base
+  title="Tekinsof Consulting | Tecnología y marketing digital para empresas"
+  description="Desarrollo de software, integración ERP/CRM, Power BI, Microsoft 365, ciberseguridad y marketing digital para empresas en Perú."
+  canonical="https://tekinsof.com/"
+>
+  <section class="relative overflow-hidden">
+    <div aria-hidden="true" class="pointer-events-none absolute -top-16 -right-24 hidden gap-6 md:flex">
+      <span class="h-96 w-12 -skew-x-12 rounded-full bg-primary"></span>
+      <span class="h-96 w-12 -skew-x-12 rounded-full bg-accent"></span>
+      <span class="h-96 w-12 -skew-x-12 rounded-full bg-surface-accent"></span>
+    </div>
+    <div class="relative mx-auto max-w-[1200px] px-4 py-24">
+      <p class="font-medium text-link">Tekinsof Consulting · Lima, Perú</p>
+      <h1 class="mt-4 max-w-3xl font-display text-4xl font-bold tracking-tight md:text-5xl">
+        Tecnología y marketing digital que hacen crecer tu empresa
+      </h1>
+      <p class="mt-6 max-w-2xl text-lg text-fg-muted">
+        Desarrollamos el software, los datos y las campañas que tu negocio necesita, con un solo equipo
+        y un solo responsable.
+      </p>
+      <div class="mt-8 flex flex-wrap gap-4">
+        <a href="#contacto" class="inline-flex min-h-11 items-center rounded-[var(--radius-control)] bg-accent px-6 font-medium text-accent-fg">
+          Cotiza tu proyecto
+        </a>
+        <a href={whatsappHref} class="inline-flex min-h-11 items-center rounded-[var(--radius-control)] border border-border px-6 font-medium">
+          Escríbenos por WhatsApp
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <section id="servicios" class="bg-surface py-20">
+    <div class="mx-auto max-w-[1200px] px-4">
+      <h2 class="font-display text-3xl font-bold tracking-tight">Servicios</h2>
+      <div class="mt-10 grid gap-12 md:grid-cols-2">
+        {
+          groups.map((group) => (
+            <div>
+              <h3 class="font-display text-xl font-semibold">{group.title}</h3>
+              <ul class="mt-4 space-y-4">
+                {group.services.map((service) => (
+                  <li>
+                    <p class="font-medium">{service.name}</p>
+                    <p class="text-fg-muted">{service.line}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20">
+    <div class="mx-auto max-w-[1200px] px-4">
+      <h2 class="font-display text-3xl font-bold tracking-tight">Por qué Tekinsof</h2>
+      <ul class="mt-8 grid gap-6 md:grid-cols-3">
+        {
+          reasons.map((reason) => (
+            <li class="rounded-[var(--radius-card)] border border-border p-6">
+              <p class="font-display text-lg font-semibold">{reason.title}</p>
+              <p class="mt-2 text-fg-muted">{reason.text}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section id="contacto" class="bg-surface-accent py-20">
+    <div class="mx-auto grid max-w-[1200px] gap-12 px-4 md:grid-cols-2">
+      <div>
+        <h2 class="font-display text-3xl font-bold tracking-tight">Conversemos sobre tu proyecto</h2>
+        <p class="mt-4 text-fg-muted">Déjanos tus datos y un especialista te contactará.</p>
+        <address class="mt-8 space-y-2 not-italic">
+          <p>Av. La Molina 145, Ate, Lima</p>
+          <p><a href="mailto:info@tekinsof.com" class="text-link">info@tekinsof.com</a></p>
+          <p><a href={whatsappHref} class="text-link">WhatsApp +51 981 053 022</a></p>
+          <p><a href={bookingsUrl} class="text-link">Agenda una reunión</a></p>
+        </address>
+      </div>
+      <div class="rounded-[var(--radius-card)] bg-background p-6">
+        <LeadForm client:visible apiUrl={apiUrl} siteKey={siteKey} services={services} consentVersion="2026-10" />
+      </div>
+    </div>
+  </section>
+</Base>

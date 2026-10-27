@@ -1,0 +1,64 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/plus-jakarta-sans";
+
+/* Landing blocks (packages/core/src/cms/blocks.tsx, step 17) use utility classes too. */
+@source "../../../../packages/core";
+
+/* Same tokens as apps/crm/src/app/globals.css (blueprint §7). The site is light-only in R1. */
+:root {
+  --background: #ffffff;
+  --surface: #f7f7f8;
+  --surface-accent: #e7dbe7;
+  --border: #e2e3e7;
+  --fg: #1e2126;
+  --fg-muted: #5b606b;
+  --primary: #1e2126;
+  --primary-fg: #ffffff;
+  --accent: #ff7f5c;
+  --accent-fg: #1e2126;
+  --link: #c2452a;
+  --focus: #c2452a;
+  --destructive: #b42318;
+  --success: #067647;
+  --warning: #b54708;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-accent: var(--surface-accent);
+  --color-border: var(--border);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-link: var(--link);
+  --color-focus: var(--focus);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-display:
+    "Plus Jakarta Sans Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --radius-control: 10px;
+  --radius-card: 14px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override every utility class */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override every utility class */
+    transition-duration: 0.01ms !important;
+  }
+}
