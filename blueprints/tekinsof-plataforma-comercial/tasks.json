@@ -28,7 +28,7 @@
       "apps/crm/e2e/health.spec.ts",
       "apps/web/src/pages/index.astro"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E1-T2",
