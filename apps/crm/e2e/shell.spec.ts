@@ -7,6 +7,11 @@ test("sin sesión, /leads redirige a /login", async ({ page }) => {
   await expect(page).toHaveURL(/\/login/);
 });
 
+test("sin sesión, /configuracion/usuarios redirige a /login", async ({ page }) => {
+  await page.goto("/configuracion/usuarios");
+  await expect(page).toHaveURL(/\/login/);
+});
+
 test("ventas ve Leads y no ve Usuarios", async ({ page }) => {
   await loginAs(page, "ventas");
   await page.goto("/leads");
