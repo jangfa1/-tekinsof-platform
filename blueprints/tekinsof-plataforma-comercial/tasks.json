@@ -1,0 +1,581 @@
+[
+  {
+    "id": "E1-T1",
+    "title": "Scaffold the monorepo and run both apps",
+    "epic": "01-fundaciones",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `pnpm typecheck` runs at the repository root THE SYSTEM SHALL exit 0 for `@tekinsof/core`, `@tekinsof/crm` (tsc) and `@tekinsof/web` (astro check).",
+      "WHEN `pnpm lint` runs at the repository root with the bundle present under `blueprints/` THE SYSTEM SHALL exit 0.",
+      "WHEN `pnpm build` runs THE SYSTEM SHALL exit 0 and write `apps/web/dist/index.html` containing the text `Tekinsof Consulting`.",
+      "WHEN the built CRM is started by Playwright and `GET /api/health` is requested THE SYSTEM SHALL respond 200 with JSON `status` = `\"ok\"` and `service` = `\"crm\"`.",
+      "WHEN the built CRM receives `GET /ruta-que-no-existe` THE SYSTEM SHALL respond 404."
+    ],
+    "verify": [
+      "pnpm install --frozen-lockfile",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm build",
+      "grep -q \"Tekinsof Consulting\" apps/web/dist/index.html",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/health.spec.ts"
+    ],
+    "checkpoint": "step-01-scaffold",
+    "files": [
+      "apps/crm/src/app/globals.css",
+      "apps/crm/src/app/layout.tsx",
+      "apps/crm/src/app/api/health/route.ts",
+      "apps/crm/e2e/health.spec.ts",
+      "apps/web/src/pages/index.astro"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T2",
+    "title": "Data layer: full Release 1 schema, client and first…",
+    "epic": "01-fundaciones",
+    "dependencies": [
+      "E1-T1"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `pnpm db:generate` runs on the step-1 tree THE SYSTEM SHALL exit 0 and create `packages/core/drizzle/meta/_journal.json`.",
+      "WHEN `pnpm --filter @tekinsof/core test test/schema.test.ts` runs THE SYSTEM SHALL apply every migration to an in-memory PGlite and find every table named in the test's `tables` array — the 24 `pgTable` definitions of §4, from `users` to `messages`.",
+      "WHEN a `leads` row with `source = 'web_form'` and no `consent_at` is inserted THE SYSTEM SHALL reject it with a check-constraint error.",
+      "WHEN a `leads` row has neither `email` nor `phone` THE SYSTEM SHALL reject it.",
+      "WHEN `pnpm db:migrate` runs twice against `DATABASE_URL=pglite://.data/dev` from `.env` THE SYSTEM SHALL exit 0 both times."
+    ],
+    "verify": [
+      "pnpm db:generate",
+      "test -f packages/core/drizzle/meta/_journal.json",
+      "pnpm --filter @tekinsof/core test test/schema.test.ts",
+      "pnpm db:migrate",
+      "pnpm db:migrate",
+      "pnpm typecheck",
+      "pnpm lint"
+    ],
+    "checkpoint": "step-02-data-layer",
+    "files": [
+      "packages/core/src/db/schema.ts",
+      "packages/core/src/db/client.ts",
+      "packages/core/src/result.ts",
+      "packages/core/test/schema.test.ts",
+      "packages/core/drizzle/**"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T3",
+    "title": "Core users: permissions, audit, invitations and admission",
+    "epic": "01-fundaciones",
+    "dependencies": [
+      "E1-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a `ventas` actor is checked for `leads.update_own` on a resource whose `ownerId` is another user THE SYSTEM SHALL return false, and true when the `ownerId` is the actor's own id.",
+      "WHEN `admitUser` runs for an `@tekinsof.com` email with no pending invitation THE SYSTEM SHALL return `{ ok: false, error.code: \"FORBIDDEN\" }`.",
+      "WHEN `admitUser` runs for the bootstrap email THE SYSTEM SHALL return role `gerencia` without needing an invitation.",
+      "WHEN `deactivateUser` targets the only active `gerencia` user THE SYSTEM SHALL return `FORBIDDEN` and leave `is_active` true.",
+      "WHEN `inviteUser` succeeds THE SYSTEM SHALL write one `invitations` row and one `audit_events` row with `action = 'user.invited'` in the same transaction."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/permissions.test.ts",
+      "pnpm --filter @tekinsof/core test test/users.test.ts",
+      "pnpm typecheck",
+      "pnpm lint"
+    ],
+    "checkpoint": "step-03-core-users",
+    "files": [
+      "packages/core/src/auth/permissions.ts",
+      "packages/core/src/audit/audit.ts",
+      "packages/core/src/users/users.ts",
+      "packages/core/test/permissions.test.ts",
+      "packages/core/test/users.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T4",
+    "title": "Auth in the CRM: Better Auth + Microsoft Entra ID…",
+    "epic": "01-fundaciones",
+    "dependencies": [
+      "E1-T3"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the bootstrap email signs up in test mode THE SYSTEM SHALL create a session whose user has `role = \"gerencia\"`.",
+      "WHEN `intruso@gmail.com` attempts sign-up THE SYSTEM SHALL refuse it with a non-200 status and create no `users` row.",
+      "WHEN `/login` is requested THE SYSTEM SHALL respond 200 with a button labelled \"Entrar con Microsoft\".",
+      "WHEN `parseEnv` receives `VERCEL_ENV=production` together with `AUTH_TEST_MODE=1` THE SYSTEM SHALL throw an error whose message contains `AUTH_TEST_MODE`."
+    ],
+    "verify": [
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/auth.spec.ts"
+    ],
+    "checkpoint": "step-04-auth-crm",
+    "files": [
+      "apps/crm/src/lib/env.ts",
+      "apps/crm/src/lib/auth.ts",
+      "apps/crm/src/app/api/auth/[...all]/route.ts",
+      "apps/crm/src/app/login/page.tsx",
+      "apps/crm/e2e/auth.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T5",
+    "title": "Session guard, proxy, app layout with…",
+    "epic": "01-fundaciones",
+    "dependencies": [
+      "E1-T4"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN an anonymous browser opens `/leads` THE SYSTEM SHALL end on a URL containing `/login`.",
+      "WHEN a `ventas` user views `/leads` THE SYSTEM SHALL render a navigation link \"Leads\" and no link \"Usuarios\".",
+      "WHEN a `gerencia` user views `/leads` THE SYSTEM SHALL render the link \"Usuarios\".",
+      "WHEN the user picks the dark theme and reloads THE SYSTEM SHALL serve `<html class=\"dark\">` in the initial HTML.",
+      "WHEN axe scans `/leads` THE SYSTEM SHALL report zero serious or critical violations."
+    ],
+    "verify": [
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/shell.spec.ts",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/auth.spec.ts"
+    ],
+    "checkpoint": "step-05-shell-guard",
+    "files": [
+      "apps/crm/src/lib/actor.ts",
+      "apps/crm/src/proxy.ts",
+      "apps/crm/src/app/(app)/layout.tsx",
+      "apps/crm/src/app/(app)/leads/page.tsx",
+      "apps/crm/e2e/shell.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E1-T6",
+    "title": "UI primitives, user administration and the segment error…",
+    "epic": "01-fundaciones",
+    "dependencies": [
+      "E1-T5"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a `gerencia` user submits an invitation for an `@tekinsof.com` address THE SYSTEM SHALL list it under pending invitations after the redirect.",
+      "WHEN an invitation targets an address outside `ALLOWED_EMAIL_DOMAIN` THE SYSTEM SHALL show the field error \"Dominio no permitido\" and create no row.",
+      "WHEN a `ventas` user requests `/configuracion/usuarios` THE SYSTEM SHALL respond 404.",
+      "WHEN axe scans `/configuracion/usuarios` THE SYSTEM SHALL report zero serious or critical violations."
+    ],
+    "verify": [
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/users.spec.ts",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/shell.spec.ts"
+    ],
+    "checkpoint": "step-06-users-admin",
+    "files": [
+      "apps/crm/src/components/ui.tsx",
+      "apps/crm/src/app/(app)/configuracion/usuarios/page.tsx",
+      "apps/crm/src/app/(app)/configuracion/usuarios/actions.ts",
+      "apps/crm/src/app/(app)/error.tsx",
+      "apps/crm/e2e/users.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T1",
+    "title": "Accounts: companies and contacts",
+    "epic": "02-captacion",
+    "dependencies": [
+      "E1-T6"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `createCompany` receives RUC `12345` THE SYSTEM SHALL return `VALIDATION_ERROR` with `fields.ruc` and insert nothing.",
+      "WHEN a second company is created with an existing RUC THE SYSTEM SHALL return `CONFLICT`.",
+      "WHEN a contact phone `987 654 321` is saved THE SYSTEM SHALL store `+51987654321`.",
+      "WHEN a `marketing` actor calls `createCompany` THE SYSTEM SHALL return `FORBIDDEN`.",
+      "WHEN a company is soft-deleted THE SYSTEM SHALL omit it from `listCompanies` while the row stays in the table."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/accounts.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build"
+    ],
+    "checkpoint": "step-07-accounts",
+    "files": [
+      "packages/core/src/crm/accounts.ts",
+      "packages/core/test/accounts.test.ts",
+      "apps/crm/src/app/(app)/empresas/page.tsx",
+      "apps/crm/src/app/(app)/empresas/[id]/page.tsx",
+      "apps/crm/src/app/(app)/contactos/page.tsx"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T2",
+    "title": "Leads core: lead and activity services, public endpoint",
+    "epic": "02-captacion",
+    "dependencies": [
+      "E2-T1"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a valid lead is posted from `SITE_ORIGIN` THE SYSTEM SHALL respond 201 with `{ ok: true, data: { leadId, deduplicated: false } }` and write one `leads` row and one `outbox` row named `lead/created`.",
+      "WHEN the same email is posted again within 24 hours THE SYSTEM SHALL respond 200 with `deduplicated: true` and the original `leadId`, writing no new row.",
+      "WHEN the `Origin` header differs from `SITE_ORIGIN` THE SYSTEM SHALL respond 403 with `error.code = \"ORIGIN_NOT_ALLOWED\"`.",
+      "WHEN `consent` is not `true` THE SYSTEM SHALL respond 400 with `error.code = \"VALIDATION_ERROR\"` and `error.fields.consent` set.",
+      "WHEN a `ventas` actor changes the status of a lead owned by another user THE SYSTEM SHALL return `FORBIDDEN`.",
+      "WHEN a `llamada` activity is added to a `nuevo` lead THE SYSTEM SHALL set `first_contacted_at` and move the lead to `contactado`."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/leads.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/public-leads.spec.ts # expect: exit 0, 6 tests pass"
+    ],
+    "checkpoint": "step-08-leads-core",
+    "files": [
+      "packages/core/src/leads/leads.ts",
+      "packages/core/src/leads/activities.ts",
+      "packages/core/test/leads.test.ts",
+      "apps/crm/src/app/api/public/leads/route.ts",
+      "apps/crm/e2e/public-leads.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T3",
+    "title": "Leads UI: inbox, detail and quick add for WhatsApp leads",
+    "epic": "02-captacion",
+    "dependencies": [
+      "E1-T6",
+      "E2-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a `ventas` user submits the quick-add form with name and a 9-digit phone THE SYSTEM SHALL create a `whatsapp` lead owned by that user and land on its detail page showing `+51987654321`.",
+      "WHEN the status form moves a lead to `contactado` THE SYSTEM SHALL render the badge \"Contactado\" after the redirect.",
+      "WHEN `descartado` is submitted without a reason THE SYSTEM SHALL show the field error \"Indica el motivo\" and leave the status unchanged.",
+      "WHEN a lead arrives through the public endpoint THE SYSTEM SHALL list it in a `gerencia` user's `/leads` with origin \"Formulario web\".",
+      "WHEN axe scans `/leads` THE SYSTEM SHALL report zero serious or critical violations."
+    ],
+    "verify": [
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/leads.spec.ts",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/shell.spec.ts"
+    ],
+    "checkpoint": "step-09-leads-ui",
+    "files": [
+      "apps/crm/src/app/(app)/leads/page.tsx",
+      "apps/crm/src/app/(app)/leads/nuevo/page.tsx",
+      "apps/crm/src/app/(app)/leads/[id]/page.tsx",
+      "apps/crm/e2e/leads.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T4",
+    "title": "Public site base: home, lead form with Turnstile and…",
+    "epic": "02-captacion",
+    "dependencies": [
+      "E1-T1"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `pnpm --filter @tekinsof/web build` runs THE SYSTEM SHALL exit 0 and emit `dist/index.html` and `dist/privacidad.html`.",
+      "WHEN `dist/index.html` is inspected THE SYSTEM SHALL contain an `application/ld+json` block, a `wa.me/51981053022` link and a server-rendered form input named `fullName`.",
+      "WHEN `dist/index.html` is inspected THE SYSTEM SHALL contain no request to `fonts.googleapis.com`.",
+      "WHEN `dist/privacidad.html` is inspected THE SYSTEM SHALL contain the text `29733`."
+    ],
+    "verify": [
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/web build",
+      "grep -q \"application/ld+json\" apps/web/dist/index.html",
+      "grep -q \"wa.me/51981053022\" apps/web/dist/index.html",
+      "grep -q 'name=\"fullName\"' apps/web/dist/index.html",
+      "grep -q \"29733\" apps/web/dist/privacidad.html",
+      "status=0; grep -q \"fonts.googleapis.com\" apps/web/dist/index.html || status=$?; test \"$status\" -eq 1"
+    ],
+    "checkpoint": "step-10-site-base",
+    "files": [
+      "apps/web/src/styles/global.css",
+      "apps/web/src/layouts/Base.astro",
+      "apps/web/src/components/LeadForm.tsx",
+      "apps/web/src/pages/index.astro",
+      "apps/web/src/pages/privacidad.astro"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T5",
+    "title": "Automation: Microsoft Graph mailer, Inngest, round-robin…",
+    "epic": "02-captacion",
+    "dependencies": [
+      "E2-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN three leads are processed with two eligible sellers A (never assigned) and B (assigned yesterday) THE SYSTEM SHALL assign them A, B, A in that order.",
+      "WHEN `handleLeadCreated` runs twice for the same lead THE SYSTEM SHALL keep the first owner and send no additional email.",
+      "WHEN a web-form lead with an email is assigned to seller A THE SYSTEM SHALL send the acknowledgement with `from` equal to A's email and `to` equal to the prospect's email.",
+      "WHEN no `ventas` user is active THE SYSTEM SHALL assign the lead to the first active `gerencia` user.",
+      "WHEN the mailer returns an error THE SYSTEM SHALL keep the assignment and report `notified: false`."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/lead-created.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build"
+    ],
+    "checkpoint": "step-11-automation",
+    "files": [
+      "packages/core/src/integrations/graph.ts",
+      "packages/core/src/automation/lead-created.ts",
+      "packages/core/test/lead-created.test.ts",
+      "apps/crm/src/lib/inngest.ts",
+      "apps/crm/src/app/api/inngest/route.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E2-T6",
+    "title": "Sweeps: business hours, SLA, reminders, quote expiry…",
+    "epic": "02-captacion",
+    "dependencies": [
+      "E2-T5"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `addBusinessHours` runs on each of the seven rows of the table above THE SYSTEM SHALL return exactly the expected UTC instant.",
+      "WHEN `slaSweep` runs at 13:59 Lima for a lead created Monday 10:00 Lima THE SYSTEM SHALL send no alert, and at 14:01 Lima SHALL email every active `gerencia` user and set `sla_alerted_at`.",
+      "WHEN `slaSweep` runs again with the same `now` THE SYSTEM SHALL process 0 leads.",
+      "WHEN `flushOutbox`'s `send` fails THE SYSTEM SHALL increment `attempts` and keep `sent_at` null.",
+      "WHEN `quoteExpirySweep` finds a sent quote whose `valid_until` was yesterday THE SYSTEM SHALL set its status to `vencida`."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/business-hours.test.ts # expect: exit 0, 0 failed",
+      "pnpm --filter @tekinsof/core test test/sweeps.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build"
+    ],
+    "checkpoint": "step-12-sweeps",
+    "files": [
+      "packages/core/src/time/business-hours.ts",
+      "packages/core/test/business-hours.test.ts",
+      "packages/core/src/automation/sweeps.ts",
+      "packages/core/test/sweeps.test.ts",
+      "apps/crm/src/lib/inngest.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T1",
+    "title": "Pipeline: opportunities, accessible kanban, detail",
+    "epic": "03-conversion-y-campanas",
+    "dependencies": [
+      "E1-T6",
+      "E2-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a `calificado` lead is converted THE SYSTEM SHALL create one opportunity linked to it, create its contact (and company when the lead named one) and set the lead status to `convertido`.",
+      "WHEN the same lead is converted a second time THE SYSTEM SHALL return `CONFLICT` and create nothing.",
+      "WHEN a `ventas` actor moves an opportunity owned by another user THE SYSTEM SHALL return `FORBIDDEN`.",
+      "WHEN an opportunity is closed as `perdida` without a reason THE SYSTEM SHALL return `VALIDATION_ERROR`.",
+      "WHEN a card is moved to position 0 of a column holding three cards THE SYSTEM SHALL leave that column's positions exactly `[0, 1, 2, 3]`."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/opportunities.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build"
+    ],
+    "checkpoint": "step-13-pipeline",
+    "files": [
+      "packages/core/src/sales/opportunities.ts",
+      "packages/core/test/opportunities.test.ts",
+      "apps/crm/src/app/(app)/oportunidades/page.tsx",
+      "apps/crm/src/components/pipeline-board.tsx",
+      "apps/crm/src/app/(app)/oportunidades/[id]/page.tsx"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T2",
+    "title": "Quotes core: arithmetic and lifecycle",
+    "epic": "03-conversion-y-campanas",
+    "dependencies": [
+      "E2-T6",
+      "E3-T1"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `computeQuoteTotals` runs on each row of the table above THE SYSTEM SHALL return exactly the expected céntimos.",
+      "WHEN a quote with a 10.01% discount is submitted THE SYSTEM SHALL set `pendiente_aprobacion` and write one `quote/approval.requested` outbox row; with 10% it SHALL set `aprobada`.",
+      "WHEN a `ventas` actor calls `approveQuote` THE SYSTEM SHALL return `FORBIDDEN` and leave the status unchanged.",
+      "WHEN `setQuoteItems` targets a quote that is not `borrador` THE SYSTEM SHALL return `INVALID_TRANSITION`.",
+      "WHEN `newQuoteVersion` runs THE SYSTEM SHALL mark the old version `reemplazada` and create version 2 in `borrador` with the same number and items."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/quote-math.test.ts",
+      "pnpm --filter @tekinsof/core test test/quotes.test.ts",
+      "pnpm typecheck",
+      "pnpm lint"
+    ],
+    "checkpoint": "step-14-quotes-core",
+    "files": [
+      "packages/core/src/sales/quote-math.ts",
+      "packages/core/test/quote-math.test.ts",
+      "packages/core/src/sales/quotes.ts",
+      "packages/core/test/quotes.test.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T3",
+    "title": "Quotes UI: catalog, quote list and editor",
+    "epic": "03-conversion-y-campanas",
+    "dependencies": [
+      "E3-T1",
+      "E3-T2"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a seller issues a PEN quote of 1 × 1000.00 with a 15% discount THE SYSTEM SHALL show Subtotal `1,000.00`, IGV (18%) `153.00`, Total `1,003.00` and the badge \"Pendiente de aprobación\".",
+      "WHEN that seller views the pending quote THE SYSTEM SHALL render no \"Aprobar\" button.",
+      "WHEN a `gerencia` user approves it THE SYSTEM SHALL show the badge \"Aprobada\".",
+      "WHEN a `marketing` user marks a catalog service as published THE SYSTEM SHALL show \"Publicado\" on that row after the redirect.",
+      "WHEN axe scans the quote editor THE SYSTEM SHALL report zero serious or critical violations."
+    ],
+    "verify": [
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/quotes.spec.ts"
+    ],
+    "checkpoint": "step-15-quotes-ui",
+    "files": [
+      "packages/core/src/catalog/services.ts",
+      "apps/crm/src/app/(app)/catalogo/page.tsx",
+      "apps/crm/src/app/(app)/cotizaciones/page.tsx",
+      "apps/crm/src/app/(app)/cotizaciones/[id]/page.tsx",
+      "apps/crm/e2e/quotes.spec.ts"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T4",
+    "title": "Quote delivery: PDF, file storage, sending through Graph",
+    "epic": "03-conversion-y-campanas",
+    "dependencies": [
+      "E3-T3"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `renderQuotePdf` runs for an approved quote THE SYSTEM SHALL return bytes starting with `%PDF-` and longer than 1000 bytes.",
+      "WHEN `sendQuote` runs on a quote in `pendiente_aprobacion` THE SYSTEM SHALL return `APPROVAL_REQUIRED` and send nothing.",
+      "WHEN `sendQuote` runs on an `aprobada` quote THE SYSTEM SHALL send one email from the owner's address with the PDF attached and set the quote to `enviada` with `sent_at`."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/quote-delivery.test.ts # expect: exit 0, 0 failed",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/quotes.spec.ts"
+    ],
+    "checkpoint": "step-16-quote-delivery",
+    "files": [
+      "packages/core/src/storage/files.ts",
+      "packages/core/src/sales/quote-delivery.ts",
+      "packages/core/test/quote-delivery.test.ts",
+      "apps/crm/src/app/api/cotizaciones/[id]/pdf/route.ts",
+      "apps/crm/src/app/(app)/cotizaciones/[id]/page.tsx"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T5",
+    "title": "CMS: campaigns, landing blocks, editor with preview, publish",
+    "epic": "03-conversion-y-campanas",
+    "dependencies": [
+      "E1-T6",
+      "E2-T6"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN a landing is saved with a hero title longer than 90 characters THE SYSTEM SHALL return `VALIDATION_ERROR` with the field key `blocks.0.title`.",
+      "WHEN a landing contains two `form` blocks THE SYSTEM SHALL reject it with `VALIDATION_ERROR`.",
+      "WHEN a `marketing` user publishes a valid landing THE SYSTEM SHALL set it `publicada` and write one `site_publishes` row and one `site/publish.requested` outbox row.",
+      "WHEN a `ventas` user tries to publish THE SYSTEM SHALL return `FORBIDDEN`.",
+      "WHEN a hero block is rendered with `Block` THE SYSTEM SHALL emit HTML containing its title."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/landings.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm --filter @tekinsof/crm build"
+    ],
+    "checkpoint": "step-17-cms-landings",
+    "files": [
+      "packages/core/src/cms/landings.ts",
+      "packages/core/src/cms/blocks.tsx",
+      "packages/core/test/landings.test.ts",
+      "apps/crm/src/app/(app)/landings/page.tsx",
+      "apps/crm/src/app/(app)/landings/[id]/page.tsx"
+    ],
+    "status": "pending"
+  },
+  {
+    "id": "E3-T6",
+    "title": "Dynamic site: catalog-driven service pages, landings, seed",
+    "epic": "03-conversion-y-campanas",
+    "dependencies": [
+      "E2-T4",
+      "E3-T5"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN `pnpm db:seed` runs twice on the migrated `.data/dev` database THE SYSTEM SHALL exit 0 both times (the unique `services.code` index makes a duplicate impossible).",
+      "WHEN the site is built after seeding THE SYSTEM SHALL emit `dist/servicios/desarrollo-de-software.html` and SHALL NOT emit `dist/servicios/mesa-de-ayuda.html` (unpublished).",
+      "WHEN the demo landing is published THE SYSTEM SHALL emit `dist/lp/demo-desarrollo-software.html` containing a `noindex` robots meta tag.",
+      "WHEN the sitemap is generated THE SYSTEM SHALL list `/servicios/desarrollo-de-software` and no `/lp/` URL.",
+      "WHEN the home page is built THE SYSTEM SHALL link to `/servicios/desarrollo-de-software`."
+    ],
+    "verify": [
+      "pnpm db:migrate",
+      "pnpm db:seed",
+      "pnpm db:seed",
+      "pnpm --filter @tekinsof/web build",
+      "test -f apps/web/dist/servicios/desarrollo-de-software.html",
+      "status=0; test -f apps/web/dist/servicios/mesa-de-ayuda.html || status=$?; test \"$status\" -eq 1",
+      "grep -q 'name=\"robots\" content=\"noindex' apps/web/dist/lp/demo-desarrollo-software.html",
+      "grep -q \"servicios/desarrollo-de-software\" apps/web/dist/sitemap-0.xml",
+      "status=0; grep -q \"/lp/\" apps/web/dist/sitemap-0.xml || status=$?; test \"$status\" -eq 1",
+      "grep -q 'href=\"/servicios/desarrollo-de-software\"' apps/web/dist/index.html",
+      "pnpm typecheck",
+      "pnpm lint"
+    ],
+    "checkpoint": "step-18-site-dynamic",
+    "files": [
+      "packages/core/scripts/seed.ts",
+      "apps/web/src/lib/content.ts",
+      "apps/web/src/pages/servicios/[slug].astro",
+      "apps/web/src/pages/lp/[slug].astro",
+      "apps/web/src/pages/index.astro"
+    ],
+    "status": "pending"
+  }
+]

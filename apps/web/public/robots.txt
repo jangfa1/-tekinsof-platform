@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tekinsof.com/sitemap-index.xml

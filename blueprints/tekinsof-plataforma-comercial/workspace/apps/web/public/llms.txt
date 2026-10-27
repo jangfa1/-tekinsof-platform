@@ -1,0 +1,15 @@
+# Tekinsof Consulting
+
+> Consultora tecnológica peruana (Lima) que integra servicios de tecnología y de marketing digital para empresas: desarrollo de software y aplicaciones web a medida, integración ERP/CRM, automatización de procesos, Microsoft 365, Power BI y analítica, Big Data, infraestructura, ciberseguridad, branding, publicidad digital, automatización comercial, WhatsApp Business e inteligencia artificial aplicada a negocios.
+
+## Páginas principales
+
+- [Inicio](https://tekinsof.com/): qué hace Tekinsof, servicios destacados, casos y contacto.
+- [Servicios](https://tekinsof.com/#servicios): catálogo de servicios de tecnología y marketing digital; cada servicio tiene su página en https://tekinsof.com/servicios/<servicio>.
+- [Política de privacidad](https://tekinsof.com/privacidad): tratamiento de datos personales (Ley N.° 29733).
+
+## Contacto
+
+- Correo: info@tekinsof.com
+- WhatsApp: +51 981 053 022
+- Dirección: Av. La Molina 145, Ate, Lima, Perú

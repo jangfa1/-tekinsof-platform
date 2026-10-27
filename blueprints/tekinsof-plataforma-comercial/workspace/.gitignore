@@ -1,0 +1,20 @@
+# dependencies and build output
+node_modules/
+.next/
+.astro/
+dist/
+.vercel/
+next-env.d.ts
+*.tsbuildinfo
+# local databases and files (PGlite, local storage driver)
+.data/
+# test output
+playwright-report/
+test-results/
+# env: real values never committed, the example always is
+.env
+.env.*
+!.env.example
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install)",
+      "Bash(pnpm install --frozen-lockfile)",
+      "Bash(pnpm approve-builds --all)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm format)",
+      "Bash(pnpm build)",
+      "Bash(pnpm test)",
+      "Bash(pnpm test:e2e)",
+      "Bash(pnpm db:generate)",
+      "Bash(pnpm db:migrate)",
+      "Bash(pnpm db:seed)",
+      "Bash(pnpm --filter @tekinsof/core test:*)",
+      "Bash(pnpm --filter @tekinsof/crm build)",
+      "Bash(pnpm --filter @tekinsof/crm test:e2e:*)",
+      "Bash(pnpm --filter @tekinsof/web build)",
+      "Bash(pnpm --filter @tekinsof/crm exec playwright install chromium)",
+      "Bash(pnpm -v)",
+      "Bash(node -v)",
+      "Bash(test:*)",
+      "Bash(grep:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git tag:*)",
+      "Bash(git ls-files:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git rev-list:*)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Bash(git push:*)",
+      "Bash(rm -rf:*)",
+      "Bash(vercel:*)",
+      "Bash(supabase db reset:*)"
+    ]
+  }
+}
