@@ -41,10 +41,7 @@ const dateTime = new Intl.DateTimeFormat("es-PE", {
   dateStyle: "medium",
   timeStyle: "short",
 });
-const amount = new Intl.NumberFormat("es-PE", {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-});
+const amount = new Intl.NumberFormat("es-PE", { minimumFractionDigits: 2 });
 const money = (cents: number, currency: string) =>
   `${currency === "USD" ? "US$" : "S/"} ${amount.format(cents / 100)}`;
 
@@ -145,18 +142,13 @@ export default async function OpportunityPage({
           {stageLabels[opportunity.stage] ?? opportunity.stage}
         </Badge>
       </div>
-      <div aria-live="polite">
-        {query.ok ? (
-          <p role="status" className="text-sm text-success">
-            {query.ok}
-          </p>
-        ) : null}
-        {query.error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {query.error}
-          </p>
-        ) : null}
-      </div>
+      <p
+        aria-live="polite"
+        role={query.error ? "alert" : "status"}
+        className={`text-sm ${query.error ? "text-destructive" : "text-success"}`}
+      >
+        {query.error ?? query.ok}
+      </p>
 
       <Card title="Datos">
         <dl className="grid gap-4 sm:grid-cols-3">
