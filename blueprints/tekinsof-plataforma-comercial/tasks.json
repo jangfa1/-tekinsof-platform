@@ -379,7 +379,7 @@
       "packages/core/test/sweeps.test.ts",
       "apps/crm/src/lib/inngest.ts"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T1",
