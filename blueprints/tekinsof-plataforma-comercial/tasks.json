@@ -536,7 +536,7 @@
       "apps/crm/src/app/(app)/landings/page.tsx",
       "apps/crm/src/app/(app)/landings/[id]/page.tsx"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T6",
