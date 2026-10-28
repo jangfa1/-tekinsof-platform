@@ -1,8 +1,8 @@
 import type { LandingBlock } from "./block-schema.ts";
 
 // One renderer for the CRM preview and the static site, so what Marketing sees is what ships.
-// Token classes only (blueprint §7). CTAs are plain links: the site swaps `data-cta` targets for its
-// WhatsApp and Bookings URLs.
+// Token classes only (blueprint §7). CTAs are plain links: the site passes `links` with its WhatsApp
+// and Bookings URLs; without them (CRM preview) they point at the form.
 
 const fieldLabels: Record<string, string> = {
   fullName: "Nombre y apellido",
@@ -16,7 +16,17 @@ const fieldLabels: Record<string, string> = {
 const ctaClass =
   "inline-flex min-h-11 items-center rounded-[var(--radius-control)] bg-accent px-6 font-medium text-accent-fg";
 
-function Cta({ label, target }: { label: string; target: "form" | "whatsapp" | "bookings" }) {
+export type CtaLinks = { whatsapp?: string; bookings?: string };
+
+function Cta({
+  label,
+  target,
+  links,
+}: {
+  label: string;
+  target: "form" | "whatsapp" | "bookings";
+  links: CtaLinks;
+}) {
   if (target === "form") {
     return (
       <a href="#formulario" className={ctaClass}>
@@ -25,7 +35,7 @@ function Cta({ label, target }: { label: string; target: "form" | "whatsapp" | "
     );
   }
   return (
-    <a href="#formulario" data-cta={target} className={ctaClass}>
+    <a href={links[target] ?? "#formulario"} data-cta={target} className={ctaClass}>
       {label}
     </a>
   );
@@ -33,7 +43,15 @@ function Cta({ label, target }: { label: string; target: "form" | "whatsapp" | "
 
 const section = "mx-auto max-w-[1200px] px-4 py-16";
 
-export function Block({ block, preview = false }: { block: LandingBlock; preview?: boolean }) {
+export function Block({
+  block,
+  preview = false,
+  links = {},
+}: {
+  block: LandingBlock;
+  preview?: boolean;
+  links?: CtaLinks;
+}) {
   switch (block.type) {
     case "hero":
       return (
@@ -45,7 +63,7 @@ export function Block({ block, preview = false }: { block: LandingBlock; preview
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-fg-muted">{block.subtitle}</p>
             <div className="mt-8">
-              <Cta label={block.ctaLabel} target={block.ctaTarget} />
+              <Cta label={block.ctaLabel} target={block.ctaTarget} links={links} />
             </div>
           </div>
         </section>
@@ -113,7 +131,7 @@ export function Block({ block, preview = false }: { block: LandingBlock; preview
             <h2 className="font-display text-3xl font-bold tracking-tight">{block.title}</h2>
             <p className="mt-4 text-fg-muted">{block.text}</p>
             <div className="mt-8">
-              <Cta label={block.ctaLabel} target={block.ctaTarget} />
+              <Cta label={block.ctaLabel} target={block.ctaTarget} links={links} />
             </div>
           </div>
         </section>

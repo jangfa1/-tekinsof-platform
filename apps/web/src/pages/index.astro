@@ -1,95 +1,11 @@
 ---
 import LeadForm from "../components/LeadForm.tsx";
 import Base from "../layouts/Base.astro";
+import { getFeaturedServices, getPublishedServices, site, whatsappLink } from "../lib/content.ts";
 
-const apiUrl = process.env.PUBLIC_LEADS_API_URL || "http://localhost:3000/api/public/leads";
-const siteKey = process.env.PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA";
-const whatsappNumber = process.env.PUBLIC_WHATSAPP_NUMBER || "51981053022";
-const bookingsUrl = process.env.PUBLIC_BOOKINGS_URL || "#contacto";
-const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent("Hola Tekinsof, quiero información (/)")}`;
-
-// Static focus list; step 18 replaces it with the published catalog (same slugs as the seed).
-const groups = [
-  {
-    title: "Tecnología",
-    services: [
-      {
-        slug: "desarrollo-de-software",
-        name: "Desarrollo de Software",
-        line: "Sistemas a medida que se adaptan a tu operación.",
-      },
-      {
-        slug: "integracion-erp",
-        name: "Integración ERP",
-        line: "Conectamos tu ERP con ventas, logística y finanzas.",
-      },
-      {
-        slug: "integracion-crm",
-        name: "Integración CRM",
-        line: "Tu CRM sincronizado con el resto de la empresa.",
-      },
-      {
-        slug: "automatizacion-de-procesos",
-        name: "Automatización de Procesos",
-        line: "Menos tareas manuales, menos errores.",
-      },
-      {
-        slug: "microsoft-365",
-        name: "Microsoft 365",
-        line: "Implementación, migración y adopción de M365.",
-      },
-      {
-        slug: "power-bi-y-analitica",
-        name: "Power BI y Analítica",
-        line: "Tableros que muestran cómo va tu negocio hoy.",
-      },
-      { slug: "big-data", name: "Big Data", line: "Datos de muchas fuentes, listos para decidir." },
-      {
-        slug: "infraestructura-tecnologica",
-        name: "Infraestructura Tecnológica",
-        line: "Redes, servidores y nube que no se caen.",
-      },
-      {
-        slug: "ciberseguridad",
-        name: "Ciberseguridad",
-        line: "Protegemos tus datos, cuentas y equipos.",
-      },
-      {
-        slug: "inteligencia-artificial-para-negocios",
-        name: "Inteligencia Artificial aplicada a negocios",
-        line: "IA práctica para vender y operar mejor.",
-      },
-    ],
-  },
-  {
-    title: "Marketing digital",
-    services: [
-      {
-        slug: "marketing-digital",
-        name: "Marketing Digital",
-        line: "Estrategia y campañas en Google, Meta, LinkedIn y TikTok.",
-      },
-      {
-        slug: "branding-corporativo",
-        name: "Branding Corporativo",
-        line: "Una marca clara que inspira confianza.",
-      },
-      {
-        slug: "automatizacion-comercial",
-        name: "Automatización Comercial",
-        line: "Seguimiento de prospectos sin que se escape ninguno.",
-      },
-      {
-        slug: "whatsapp-business",
-        name: "WhatsApp Business",
-        line: "Atiende y vende por el canal que tus clientes usan.",
-      },
-    ],
-  },
-];
-const services = groups.flatMap((group) =>
-  group.services.map(({ slug, name }) => ({ slug, name })),
-);
+const whatsappHref = whatsappLink("Hola Tekinsof, quiero información (/)");
+const [groups, published] = await Promise.all([getFeaturedServices(), getPublishedServices()]);
+const services = published.map(({ slug, name }) => ({ slug, name }));
 
 const reasons = [
   {
@@ -143,11 +59,16 @@ const reasons = [
           groups.map((group) => (
             <div>
               <h3 class="font-display text-xl font-semibold">{group.title}</h3>
-              <ul class="mt-4 space-y-4">
+              <ul class="mt-4 grid gap-4 sm:grid-cols-2">
                 {group.services.map((service) => (
                   <li>
-                    <p class="font-medium">{service.name}</p>
-                    <p class="text-fg-muted">{service.line}</p>
+                    <a
+                      href={`/servicios/${service.slug}`}
+                      class="block h-full rounded-[var(--radius-card)] border border-border bg-background p-4 hover:border-link"
+                    >
+                      <span class="block font-medium">{service.name}</span>
+                      <span class="mt-1 block text-fg-muted">{service.summary}</span>
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -183,11 +104,11 @@ const reasons = [
           <p>Av. La Molina 145, Ate, Lima</p>
           <p><a href="mailto:info@tekinsof.com" class="text-link">info@tekinsof.com</a></p>
           <p><a href={whatsappHref} class="text-link">WhatsApp +51 981 053 022</a></p>
-          <p><a href={bookingsUrl} class="text-link">Agenda una reunión</a></p>
+          <p><a href={site.bookingsUrl} class="text-link">Agenda una reunión</a></p>
         </address>
       </div>
       <div class="rounded-[var(--radius-card)] bg-background p-6">
-        <LeadForm client:visible apiUrl={apiUrl} siteKey={siteKey} services={services} consentVersion="2026-10" />
+        <LeadForm client:visible apiUrl={site.apiUrl} siteKey={site.siteKey} services={services} consentVersion={site.consentVersion} />
       </div>
     </div>
   </section>

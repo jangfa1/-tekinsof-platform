@@ -1,0 +1,89 @@
+---
+import type { Service } from "@tekinsof/core/catalog/services";
+import LeadForm from "../../components/LeadForm.tsx";
+import Base from "../../layouts/Base.astro";
+import { getPublishedServices, site, whatsappLink } from "../../lib/content.ts";
+
+export async function getStaticPaths() {
+  const services = await getPublishedServices();
+  return services.map((service) => ({
+    params: { slug: service.slug },
+    props: { service, options: services.map(({ slug, name }) => ({ slug, name })) },
+  }));
+}
+
+interface Props {
+  service: Service;
+  options: { slug: string; name: string }[];
+}
+
+const { service, options } = Astro.props;
+const canonical = `https://tekinsof.com/servicios/${service.slug}`;
+const paragraphs = service.body
+  .split(/\r?\n\s*\r?\n/)
+  .map((p) => p.trim())
+  .filter(Boolean);
+const whatsappHref = whatsappLink(`Hola Tekinsof, quiero información sobre ${service.name}`);
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Service",
+  name: service.name,
+  description: service.summary,
+  url: canonical,
+  areaServed: "PE",
+  provider: { "@type": "Organization", name: "Tekinsof Consulting", url: "https://tekinsof.com" },
+};
+---
+
+<Base
+  title={service.seoTitle ?? `${service.name} | Tekinsof Consulting`}
+  description={service.seoDescription ?? service.summary}
+  canonical={canonical}
+>
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+  <section class="bg-surface-accent">
+    <div class="mx-auto max-w-[1200px] px-4 py-16">
+      <p class="font-medium text-link"><a href="/#servicios">Servicios</a></p>
+      <h1 class="mt-2 max-w-3xl font-display text-4xl font-bold tracking-tight">{service.name}</h1>
+      <p class="mt-4 max-w-2xl text-lg text-fg-muted">{service.summary}</p>
+      <div class="mt-8 flex flex-wrap gap-4">
+        <a href="#contacto" class="inline-flex min-h-11 items-center rounded-[var(--radius-control)] bg-accent px-6 font-medium text-accent-fg">
+          Cotiza este servicio
+        </a>
+        <a href={whatsappHref} class="inline-flex min-h-11 items-center rounded-[var(--radius-control)] border border-border bg-background px-6 font-medium">
+          Escríbenos por WhatsApp
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {
+    paragraphs.length > 0 && (
+      <section class="mx-auto max-w-[1200px] space-y-4 px-4 py-16">
+        {paragraphs.map((p) => (
+          <p class="max-w-3xl">{p}</p>
+        ))}
+      </section>
+    )
+  }
+
+  <section id="contacto" class="py-16">
+    <div class="mx-auto grid max-w-[1200px] gap-12 px-4 md:grid-cols-2">
+      <div>
+        <h2 class="font-display text-3xl font-bold tracking-tight">Conversemos sobre tu proyecto</h2>
+        <p class="mt-4 text-fg-muted">Déjanos tus datos y un especialista en {service.name} te contactará.</p>
+      </div>
+      <div class="rounded-[var(--radius-card)] border border-border p-6">
+        <LeadForm
+          client:visible
+          apiUrl={site.apiUrl}
+          siteKey={site.siteKey}
+          services={options}
+          defaultService={service.slug}
+          consentVersion={site.consentVersion}
+        />
+      </div>
+    </div>
+  </section>
+</Base>

@@ -1,0 +1,70 @@
+---
+import { Block } from "@tekinsof/core/cms/blocks";
+import LeadForm from "../../components/LeadForm.tsx";
+import Base from "../../layouts/Base.astro";
+import {
+  getPublishedLandings,
+  getPublishedServices,
+  type PublishedLanding,
+  site,
+  whatsappLink,
+} from "../../lib/content.ts";
+
+export async function getStaticPaths() {
+  const [landings, services] = await Promise.all([getPublishedLandings(), getPublishedServices()]);
+  const options = services.map(({ slug, name }) => ({ slug, name }));
+  return landings.map((landing) => ({
+    params: { slug: landing.slug },
+    props: { landing, options },
+  }));
+}
+
+interface Props {
+  landing: PublishedLanding;
+  options: { slug: string; name: string }[];
+}
+
+const { landing, options } = Astro.props;
+const links = {
+  whatsapp: whatsappLink(
+    landing.whatsappMessage ?? `Hola Tekinsof, quiero información (/lp/${landing.slug})`,
+  ),
+  bookings: site.bookingsUrl,
+};
+const hero = landing.blocks.find((b) => b.type === "hero");
+const description =
+  landing.seoDescription ?? (hero?.type === "hero" ? hero.subtitle : landing.title);
+---
+
+<Base
+  title={landing.seoTitle ?? `${landing.title} | Tekinsof Consulting`}
+  description={description}
+  canonical={`https://tekinsof.com/lp/${landing.slug}`}
+  noindex
+>
+  {
+    landing.blocks.map((block) =>
+      block.type === "form" ? (
+        <section id="formulario" class="mx-auto max-w-[1200px] px-4 py-16">
+          <h2 class="font-display text-3xl font-bold tracking-tight">{block.title}</h2>
+          <div class="mt-6 max-w-xl rounded-[var(--radius-card)] border border-border p-6">
+            <LeadForm
+              client:visible
+              apiUrl={site.apiUrl}
+              siteKey={site.siteKey}
+              services={options}
+              defaultService={block.serviceInterest}
+              landingSlug={landing.slug}
+              campaignSlug={landing.campaignSlug ?? undefined}
+              fields={block.fields}
+              submitLabel={block.submitLabel}
+              consentVersion={site.consentVersion}
+            />
+          </div>
+        </section>
+      ) : (
+        <Block block={block} links={links} />
+      ),
+    )
+  }
+</Base>

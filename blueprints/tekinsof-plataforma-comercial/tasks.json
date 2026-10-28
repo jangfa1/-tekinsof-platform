@@ -576,6 +576,6 @@
       "apps/web/src/pages/lp/[slug].astro",
       "apps/web/src/pages/index.astro"
     ],
-    "status": "pending"
+    "status": "done"
   }
 ]
