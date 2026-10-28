@@ -1,6 +1,8 @@
 import { can } from "@tekinsof/core/auth/permissions";
 import { listServices } from "@tekinsof/core/catalog/services";
 import { getDb } from "@tekinsof/core/db/client";
+import { createMailer } from "@tekinsof/core/integrations/graph";
+import { sendQuote } from "@tekinsof/core/sales/quote-delivery";
 import { formatAmount, toHundredths } from "@tekinsof/core/sales/quote-math";
 import {
   approveQuote,
@@ -10,11 +12,13 @@ import {
   setQuoteItems,
   submitQuote,
 } from "@tekinsof/core/sales/quotes";
+import { createFileStore } from "@tekinsof/core/storage/files";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Badge, Button, Card, Field, Input, Select } from "@/components/ui";
 import { authorize, requirePermissionPage } from "@/lib/actor";
+import { getEnv } from "@/lib/env";
 
 export const metadata: Metadata = { title: "Cotización" };
 
@@ -89,6 +93,31 @@ async function save(formData: FormData) {
     back(id, { ok: "Cotización emitida" });
   }
   back(id, { ok: "Cambios guardados" });
+}
+
+async function send(formData: FormData) {
+  "use server";
+  const id = str(formData, "quoteId");
+  const actor = await authorize("quotes.read");
+  if (!actor.ok) failure(id, actor.error);
+  const env = getEnv();
+  const deps = {
+    store: createFileStore({
+      driver: env.STORAGE_DRIVER,
+      supabaseUrl: env.SUPABASE_URL,
+      serviceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
+      bucket: "quotes",
+    }),
+    mailer: createMailer({
+      driver: env.MAIL_DRIVER,
+      tenantId: env.GRAPH_TENANT_ID,
+      clientId: env.GRAPH_CLIENT_ID,
+      clientSecret: env.GRAPH_CLIENT_SECRET,
+    }),
+  };
+  const result = await sendQuote(getDb(), deps, actor.data, id, { to: str(formData, "to") });
+  if (!result.ok) failure(id, result.error);
+  back(id, { ok: `Enviada a ${result.data.to}` });
 }
 
 async function decide(formData: FormData) {
@@ -335,7 +364,31 @@ export default async function QuotePage({
         </form>
       </Card>
 
-      <div className="flex flex-wrap gap-2">
+      {quote.status === "aprobada" && can(actor, "quotes.send_own", owner) ? (
+        <Card title="Enviar al cliente">
+          <form action={send} className="flex flex-wrap items-end gap-4">
+            <input type="hidden" name="quoteId" value={quote.id} />
+            <div className="min-w-64">
+              <Field
+                id="to"
+                label="Correo del cliente"
+                help="Sale desde tu buzón de Outlook con el PDF adjunto"
+              >
+                <Input name="to" type="email" required defaultValue={quote.contact?.email ?? ""} />
+              </Field>
+            </div>
+            <Button type="submit">Enviar al cliente</Button>
+          </form>
+        </Card>
+      ) : null}
+
+      <div className="flex flex-wrap items-center gap-2">
+        <a
+          href={`/api/cotizaciones/${quote.id}/pdf`}
+          className="inline-flex min-h-9 items-center rounded-[var(--radius-control)] border border-border px-4 text-sm font-medium hover:bg-surface"
+        >
+          Descargar PDF
+        </a>
         {quote.status === "pendiente_aprobacion" && can(actor, "quotes.approve") ? (
           <form action={decide} className="flex gap-2">
             <input type="hidden" name="quoteId" value={quote.id} />

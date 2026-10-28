@@ -504,7 +504,7 @@
       "apps/crm/src/app/api/cotizaciones/[id]/pdf/route.ts",
       "apps/crm/src/app/(app)/cotizaciones/[id]/page.tsx"
     ],
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "E3-T5",
