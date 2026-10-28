@@ -1,8 +1,11 @@
 // Build-time reads of the CRM database (the site never writes to it). DATABASE_URL comes from the
 // repository-root .env loaded by astro.config.mjs.
 import { listServices, type Service } from "@tekinsof/core/catalog/services";
-import { type LandingBlock, landingBlocksSchema } from "@tekinsof/core/cms/block-schema";
-import { listPublishedLandings } from "@tekinsof/core/cms/landings";
+import {
+  type LandingBlock,
+  landingBlocksSchema,
+  listPublishedLandings,
+} from "@tekinsof/core/cms/landings";
 import { getDb } from "@tekinsof/core/db/client";
 
 // PUBLIC_* values shared by every page that renders the lead form or WhatsApp links.

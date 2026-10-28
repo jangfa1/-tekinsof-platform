@@ -8,6 +8,18 @@ import { campaigns, landingPages } from "../db/schema.ts";
 import { err, ok, type Result, validationError } from "../result.ts";
 import { kebab, landingBlocksSchema, line } from "./block-schema.ts";
 
+// The block contract (blueprint §5) lives in block-schema.ts to keep this module under 300 lines;
+// it is re-exported here because `cms/landings` is the path the blueprint publishes it under.
+export {
+  type BlockType,
+  blockSchema,
+  blockTypes,
+  defaultBlock,
+  formFields,
+  type LandingBlock,
+  landingBlocksSchema,
+} from "./block-schema.ts";
+
 const blank = (value: unknown) => (value === "" || value === null ? undefined : value);
 const channels = [
   "google_ads",
