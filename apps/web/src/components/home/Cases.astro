@@ -1,0 +1,49 @@
+---
+import { pendingCases } from "../../lib/home-placeholders.ts";
+import Icon from "../ui/Icon.astro";
+import PendingBadge from "../ui/PendingBadge.astro";
+import SectionHeading from "../ui/SectionHeading.astro";
+---
+
+<section id="casos" class="pt-24 md:pt-32">
+  <div class="mx-auto max-w-[1200px] px-4">
+    <SectionHeading
+      index="06"
+      eyebrow="Casos de éxito"
+      title="Proyectos que cambiaron la forma de trabajar de nuestros clientes."
+    />
+    <ul class="mt-16 grid gap-6 md:grid-cols-3">
+      {
+        pendingCases.map((item, i) => (
+          <li
+            data-placeholder
+            class:list={["reveal flex flex-col rounded-[var(--radius-card)] border border-dashed border-border bg-surface p-6", i === 1 && "reveal-2", i === 2 && "reveal-3"]}
+          >
+            <PendingBadge />
+            <p class="eyebrow mt-8 text-fg-muted">{item.sector}</p>
+            <h3 class="mt-3 font-display text-xl font-semibold">{item.title}</h3>
+            <dl class="mt-6 grid gap-4 text-sm">
+              <div>
+                <dt class="font-semibold">Reto</dt>
+                <dd class="mt-1 text-fg-muted">{item.challenge}</dd>
+              </div>
+              <div>
+                <dt class="font-semibold">Solución</dt>
+                <dd class="mt-1 text-fg-muted">{item.solution}</dd>
+              </div>
+            </dl>
+            <div class="mt-auto pt-8">
+              <div class="flex items-end justify-between border-t border-border pt-6">
+                <p>
+                  <span class="block font-display text-4xl font-bold text-fg-muted/50">—</span>
+                  <span class="mt-1 block text-xs text-fg-muted">{item.metricLabel}</span>
+                </p>
+                <Icon name="trending-up" class="size-8 text-border" />
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

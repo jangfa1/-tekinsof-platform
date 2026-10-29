@@ -1,0 +1,59 @@
+---
+// Testimonials (08) and clients (09). Both are placeholders until Tekinsof provides verified,
+// authorised content; see lib/home-placeholders.ts.
+import { pendingClientSlots, pendingTestimonials } from "../../lib/home-placeholders.ts";
+import Eyebrow from "../ui/Eyebrow.astro";
+import Icon from "../ui/Icon.astro";
+import PendingBadge from "../ui/PendingBadge.astro";
+
+const testimonial = pendingTestimonials[0];
+---
+
+<section id="testimonios" class="bg-surface-accent py-24 md:py-32">
+  <div class="mx-auto max-w-[1200px] px-4">
+    {
+      testimonial && (
+        <figure data-placeholder class="reveal mx-auto max-w-4xl text-center">
+          <Eyebrow index="08" indexClass="text-fg" class="justify-center text-fg-muted">
+            Testimonios
+          </Eyebrow>
+          <div class="mt-8">
+            <PendingBadge />
+          </div>
+          <blockquote class="mt-8 text-balance font-display text-2xl leading-snug font-semibold tracking-tight md:text-4xl">
+            <span aria-hidden="true" class="font-display text-6xl leading-none text-fg/20">“</span>
+            {testimonial.quote}
+          </blockquote>
+          <figcaption class="mt-10 flex items-center justify-center gap-4">
+            <span class="inline-flex size-12 items-center justify-center rounded-full border border-dashed border-fg/30 bg-background text-fg-muted">
+              <Icon name="users" class="size-5" />
+            </span>
+            <span class="text-left">
+              <span class="block font-semibold">{testimonial.name}</span>
+              <span class="block text-sm text-fg-muted">{testimonial.role}</span>
+            </span>
+          </figcaption>
+        </figure>
+      )
+    }
+  </div>
+</section>
+
+<section id="clientes" class="py-20 md:py-24">
+  <div class="mx-auto max-w-[1200px] px-4">
+    <div class="reveal flex flex-col items-center gap-4 text-center">
+      <Eyebrow index="09">Clientes</Eyebrow>
+      <h2 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Empresas que confían en Tekinsof</h2>
+      <PendingBadge label="Logos pendientes de autorización" />
+    </div>
+    <ul data-placeholder class="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+      {
+        Array.from({ length: pendingClientSlots }, (_, i) => (
+          <li class:list={["reveal flex h-24 items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border", i % 3 === 1 && "reveal-2", i % 3 === 2 && "reveal-3"]}>
+            <span class="eyebrow text-fg-muted">Espacio reservado</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>

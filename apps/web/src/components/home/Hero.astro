@@ -1,0 +1,79 @@
+---
+import Button from "../ui/Button.astro";
+import Icon from "../ui/Icon.astro";
+import HeroMockup from "./HeroMockup.astro";
+
+interface Props {
+  whatsappHref: string;
+  stats: { value: number; suffix?: string; prefix?: string; label: string }[];
+}
+
+const { whatsappHref, stats } = Astro.props;
+---
+
+<section class="theme-ink relative isolate overflow-hidden">
+  <!-- Ambient background: masked dot grid, drifting colour fields and the brand bars at full scale. -->
+  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+    <div class="bg-dots absolute inset-0"></div>
+    <div class="glow drift -top-32 left-1/4 size-120 bg-lilac/15"></div>
+    <div class="glow drift-reverse top-1/2 -right-24 size-96 bg-success/10"></div>
+    <div class="absolute -top-24 right-0 flex gap-8 opacity-60 lg:right-24">
+      <span class="h-176 w-16 -skew-x-12 rounded-full bg-linear-to-b from-surface to-transparent"></span>
+      <span class="mt-24 h-176 w-16 -skew-x-12 rounded-full bg-linear-to-b from-lilac/25 to-transparent"></span>
+      <span class="mt-48 h-176 w-16 -skew-x-12 rounded-full bg-linear-to-b from-surface-accent to-transparent"></span>
+    </div>
+    <div class="absolute inset-x-0 bottom-0 h-32 bg-linear-to-t from-background to-transparent"></div>
+  </div>
+
+  <div class="mx-auto grid max-w-[1200px] items-center gap-16 px-4 pt-32 pb-24 lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:pt-40 lg:pb-32">
+    <div>
+      <p class="eyebrow inline-flex items-center gap-3 rounded-full border border-border bg-surface/60 px-4 py-2 text-fg-muted backdrop-blur">
+        <span class="relative inline-flex size-2">
+          <span class="ping absolute inline-flex size-full rounded-full bg-success"></span>
+          <span class="relative inline-flex size-2 rounded-full bg-success"></span>
+        </span>
+        Tecnología + marketing digital · Lima, Perú
+      </p>
+      <h1 class="mt-8 text-balance font-display text-4xl leading-[1.05] font-bold tracking-tight sm:text-5xl xl:text-6xl xl:leading-[1.04]">
+        Software, datos y marketing que{" "}
+        <span class="bg-linear-to-r from-lilac via-fg to-lilac bg-clip-text text-transparent">hacen crecer</span>{" "}
+        tu empresa
+      </h1>
+      <p class="mt-8 max-w-xl text-lg text-fg-muted md:text-xl">
+        Integramos tus sistemas, automatizamos tus procesos y llenamos tu embudo de prospectos. Un
+        solo equipo, un solo responsable.
+      </p>
+      <div class="mt-10 flex flex-wrap gap-4">
+        <Button href="#contacto" size="lg" icon="arrow-right">Cotiza tu proyecto</Button>
+        <Button href={whatsappHref} variant="outline" size="lg">
+          <Icon name="message-circle" class="size-5 text-success" />
+          Escríbenos por WhatsApp
+        </Button>
+      </div>
+      <ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-fg-muted">
+        <li class="flex items-center gap-2"><Icon name="check" class="size-4 text-success" /> Tecnología y marketing en un equipo</li>
+        <li class="flex items-center gap-2"><Icon name="check" class="size-4 text-success" /> Respuesta en menos de 4 h laborables</li>
+      </ul>
+
+      <dl class="mt-12 grid max-w-xl grid-cols-3 gap-6 border-t border-border pt-8">
+        {
+          stats.map((stat) => (
+            <div>
+              <dt class="sr-only">{stat.label}</dt>
+              <dd class="font-display text-3xl font-bold tabular-nums md:text-4xl">
+                {stat.prefix}
+                <span data-count={stat.value} class="inline-block text-left" style={`min-width: ${String(stat.value).length}ch`}>{stat.value}</span>
+                {stat.suffix}
+              </dd>
+              <dd aria-hidden="true" class="mt-2 text-sm text-fg-muted">
+                {stat.label}
+              </dd>
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+
+    <HeroMockup />
+  </div>
+</section>

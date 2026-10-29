@@ -1,0 +1,39 @@
+---
+import { technologies } from "../../lib/home-content.ts";
+import Eyebrow from "../ui/Eyebrow.astro";
+
+const rows = [technologies, [...technologies].reverse()];
+---
+
+<section aria-labelledby="tecnologias-title" class="border-y border-border bg-surface py-16 md:py-20">
+  <div class="mx-auto max-w-[1200px] px-4">
+    <div class="reveal flex flex-col justify-between gap-4 md:flex-row md:items-end">
+      <div>
+        <Eyebrow index="05">Tecnologías</Eyebrow>
+        <h2 id="tecnologias-title" class="mt-4 font-display text-2xl font-bold tracking-tight md:text-3xl">
+          Plataformas con las que trabajamos
+        </h2>
+      </div>
+      <p class="max-w-md text-fg-muted">Elegimos la herramienta según tu operación, no al revés.</p>
+    </div>
+  </div>
+
+  <div class="marquee-wrap mt-10 grid gap-4 overflow-hidden [mask-image:linear-gradient(to_right,transparent,#000_10%,#000_90%,transparent)] motion-reduce:[mask-image:none]">
+    {
+      rows.map((row, r) => (
+        <div class:list={["marquee flex w-max gap-4 motion-reduce:w-full motion-reduce:flex-wrap motion-reduce:justify-center motion-reduce:px-4", r === 1 && "[animation-direction:reverse]"]}>
+          {[0, 1].map((copy) => (
+            <ul aria-hidden={copy === 1 || r === 1 ? "true" : undefined} class:list={["flex gap-4 motion-reduce:flex-wrap motion-reduce:justify-center", (copy === 1 || r === 1) && "motion-reduce:hidden"]}>
+              {row.map((name) => (
+                <li class="eyebrow flex items-center gap-3 rounded-full border border-border bg-background px-6 py-4 whitespace-nowrap text-fg">
+                  <span aria-hidden="true" class="size-2 rounded-full bg-lilac" />
+                  {name}
+                </li>
+              ))}
+            </ul>
+          ))}
+        </div>
+      ))
+    }
+  </div>
+</section>

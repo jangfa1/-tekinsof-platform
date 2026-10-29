@@ -1,0 +1,28 @@
+---
+import { benefits } from "../../lib/home-content.ts";
+import SectionHeading from "../ui/SectionHeading.astro";
+---
+
+<section class="py-24 md:py-32">
+  <div class="mx-auto max-w-[1200px] px-4">
+    <SectionHeading index="07" eyebrow="Por qué Tekinsof" title="Lo que cambia cuando trabajas con nosotros." />
+    <ol class="mt-16 grid border-t border-border md:grid-cols-2 lg:grid-cols-4">
+      {
+        benefits.map((benefit, i) => (
+          <li
+            class:list={[
+              "reveal border-b border-border py-8 md:px-6 lg:border-b-0 lg:border-l lg:first:border-l-0 lg:first:pl-0",
+              i % 2 === 1 && "md:border-l reveal-2",
+            ]}
+          >
+            <p class="font-display text-5xl font-bold tracking-tight text-fg-muted">
+              0{i + 1}
+            </p>
+            <h3 class="mt-8 font-display text-xl font-semibold">{benefit.title}</h3>
+            <p class="mt-3 text-fg-muted">{benefit.text}</p>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>

@@ -1,0 +1,78 @@
+---
+import { site } from "../../lib/content.ts";
+import LeadForm from "../LeadForm.tsx";
+import Eyebrow from "../ui/Eyebrow.astro";
+import Icon from "../ui/Icon.astro";
+
+interface Props {
+  whatsappHref: string;
+  services: { slug: string; name: string }[];
+}
+
+const { whatsappHref, services } = Astro.props;
+
+const steps = [
+  { title: "Nos escribes", text: "Por este formulario o por WhatsApp." },
+  {
+    title: "Te asignamos un especialista",
+    text: "Recibe tu consulta y te contacta en menos de 4 horas laborables.",
+  },
+  { title: "Recibes una propuesta", text: "Con alcance, plazos y una cotización clara." },
+];
+const channels = [
+  { icon: "message-circle", label: "WhatsApp +51 981 053 022", href: whatsappHref },
+  { icon: "mail", label: "info@tekinsof.com", href: "mailto:info@tekinsof.com" },
+  { icon: "calendar", label: "Agenda una reunión", href: site.bookingsUrl },
+  { icon: "map-pin", label: "Av. La Molina 145, Ate, Lima", href: undefined },
+] as const;
+---
+
+<section id="contacto" class="bg-surface py-24 md:py-32">
+  <div class="mx-auto grid max-w-[1200px] gap-12 px-4 lg:grid-cols-[1fr_1.1fr] lg:gap-16">
+    <div class="reveal">
+      <Eyebrow index="10">Contacto</Eyebrow>
+      <h2 class="mt-6 text-balance font-display text-3xl font-bold tracking-tight md:text-5xl md:leading-[1.05]">
+        Conversemos sobre tu proyecto
+      </h2>
+      <p class="mt-6 text-lg text-fg-muted">Déjanos tus datos y te explicamos cómo podemos ayudarte.</p>
+
+      <ol class="mt-10 grid gap-6">
+        {
+          steps.map((step, i) => (
+            <li class="flex gap-4">
+              <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-border bg-background font-mono text-sm">
+                {i + 1}
+              </span>
+              <span>
+                <span class="block font-semibold">{step.title}</span>
+                <span class="block text-sm text-fg-muted">{step.text}</span>
+              </span>
+            </li>
+          ))
+        }
+      </ol>
+
+      <address class="mt-10 grid gap-3 border-t border-border pt-8 not-italic sm:grid-cols-2">
+        {
+          channels.map((c) =>
+            c.href ? (
+              <a href={c.href} class="flex min-h-11 items-center gap-3 text-sm font-medium hover:text-link">
+                <Icon name={c.icon} class="size-5 text-fg-muted" />
+                {c.label}
+              </a>
+            ) : (
+              <p class="flex min-h-11 items-center gap-3 text-sm font-medium">
+                <Icon name={c.icon} class="size-5 text-fg-muted" />
+                {c.label}
+              </p>
+            ),
+          )
+        }
+      </address>
+    </div>
+
+    <div class="reveal-scale rounded-[var(--radius-card)] border border-border bg-background p-6 shadow-dialog md:p-10">
+      <LeadForm client:visible apiUrl={site.apiUrl} siteKey={site.siteKey} services={services} consentVersion={site.consentVersion} />
+    </div>
+  </div>
+</section>

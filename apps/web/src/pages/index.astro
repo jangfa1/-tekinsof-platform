@@ -1,115 +1,64 @@
 ---
-import LeadForm from "../components/LeadForm.tsx";
+import Automation from "../components/home/Automation.astro";
+import Benefits from "../components/home/Benefits.astro";
+import Cases from "../components/home/Cases.astro";
+import Contact from "../components/home/Contact.astro";
+import FinalCta from "../components/home/FinalCta.astro";
+import Hero from "../components/home/Hero.astro";
+import Marketing from "../components/home/Marketing.astro";
+import Services from "../components/home/Services.astro";
+import SocialProof from "../components/home/SocialProof.astro";
+import Technologies from "../components/home/Technologies.astro";
+import Timeline from "../components/home/Timeline.astro";
 import Base from "../layouts/Base.astro";
-import { getFeaturedServices, getPublishedServices, site, whatsappLink } from "../lib/content.ts";
+import { getFeaturedServices, getPublishedServices, whatsappLink } from "../lib/content.ts";
 
 const whatsappHref = whatsappLink("Hola Tekinsof, quiero información (/)");
 const [groups, published] = await Promise.all([getFeaturedServices(), getPublishedServices()]);
 const services = published.map(({ slug, name }) => ({ slug, name }));
+const count = (category: string) => published.filter((s) => s.category === category).length;
+const ai = published.find((s) => s.slug === "inteligencia-artificial-para-negocios");
 
-const reasons = [
-  {
-    title: "Un solo equipo",
-    text: "Tecnología y marketing digital trabajando juntos, sin intermediarios.",
-  },
-  {
-    title: "Especialistas Microsoft",
-    text: "Experiencia en Microsoft 365, Power BI y Azure para empresas.",
-  },
-  { title: "Respuesta rápida", text: "Te respondemos en menos de 4 horas laborables." },
+// Only figures Tekinsof can stand behind: catalog sizes from the database and the SLA (blueprint §1).
+const stats = [
+  { value: count("tecnologia"), label: "servicios de tecnología" },
+  { value: count("marketing"), label: "servicios de marketing digital" },
+  { value: 4, prefix: "<", suffix: " h", label: "para responder en horario laboral" },
 ];
+
+const offerCatalog = {
+  "@type": "OfferCatalog",
+  "@id": "https://tekinsof.com/#servicios",
+  name: "Servicios de Tekinsof Consulting",
+  provider: { "@id": "https://tekinsof.com/#organization" },
+  itemListElement: published.map((s) => ({
+    "@type": "Offer",
+    itemOffered: {
+      "@type": "Service",
+      name: s.name,
+      description: s.summary,
+      url: `https://tekinsof.com/servicios/${s.slug}`,
+    },
+  })),
+};
 ---
 
 <Base
   title="Tekinsof Consulting | Tecnología y marketing digital para empresas"
-  description="Desarrollo de software, integración ERP/CRM, Power BI, Microsoft 365, ciberseguridad y marketing digital para empresas en Perú."
+  description="Desarrollo de software, integración ERP/CRM, Power BI, Microsoft 365, automatización con IA y marketing digital para empresas en Perú."
   canonical="https://tekinsof.com/"
+  jsonLd={[offerCatalog]}
+  overlayHeader
 >
-  <section class="relative overflow-hidden">
-    <div aria-hidden="true" class="pointer-events-none absolute -top-16 -right-24 hidden gap-6 md:flex">
-      <span class="h-96 w-12 -skew-x-12 rounded-full bg-primary"></span>
-      <span class="h-96 w-12 -skew-x-12 rounded-full bg-accent"></span>
-      <span class="h-96 w-12 -skew-x-12 rounded-full bg-surface-accent"></span>
-    </div>
-    <div class="relative mx-auto max-w-[1200px] px-4 py-24">
-      <p class="font-medium text-link">Tekinsof Consulting · Lima, Perú</p>
-      <h1 class="mt-4 max-w-3xl font-display text-4xl font-bold tracking-tight md:text-5xl">
-        Tecnología y marketing digital que hacen crecer tu empresa
-      </h1>
-      <p class="mt-6 max-w-2xl text-lg text-fg-muted">
-        Desarrollamos el software, los datos y las campañas que tu negocio necesita, con un solo equipo
-        y un solo responsable.
-      </p>
-      <div class="mt-8 flex flex-wrap gap-4">
-        <a href="#contacto" class="inline-flex min-h-11 items-center rounded-[var(--radius-control)] bg-accent px-6 font-medium text-accent-fg">
-          Cotiza tu proyecto
-        </a>
-        <a href={whatsappHref} class="inline-flex min-h-11 items-center rounded-[var(--radius-control)] border border-border px-6 font-medium">
-          Escríbenos por WhatsApp
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <section id="servicios" class="bg-surface py-20">
-    <div class="mx-auto max-w-[1200px] px-4">
-      <h2 class="font-display text-3xl font-bold tracking-tight">Servicios</h2>
-      <div class="mt-10 grid gap-12 md:grid-cols-2">
-        {
-          groups.map((group) => (
-            <div>
-              <h3 class="font-display text-xl font-semibold">{group.title}</h3>
-              <ul class="mt-4 grid gap-4 sm:grid-cols-2">
-                {group.services.map((service) => (
-                  <li>
-                    <a
-                      href={`/servicios/${service.slug}`}
-                      class="block h-full rounded-[var(--radius-card)] border border-border bg-background p-4 hover:border-link"
-                    >
-                      <span class="block font-medium">{service.name}</span>
-                      <span class="mt-1 block text-fg-muted">{service.summary}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))
-        }
-      </div>
-    </div>
-  </section>
-
-  <section class="py-20">
-    <div class="mx-auto max-w-[1200px] px-4">
-      <h2 class="font-display text-3xl font-bold tracking-tight">Por qué Tekinsof</h2>
-      <ul class="mt-8 grid gap-6 md:grid-cols-3">
-        {
-          reasons.map((reason) => (
-            <li class="rounded-[var(--radius-card)] border border-border p-6">
-              <p class="font-display text-lg font-semibold">{reason.title}</p>
-              <p class="mt-2 text-fg-muted">{reason.text}</p>
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-  </section>
-
-  <section id="contacto" class="bg-surface-accent py-20">
-    <div class="mx-auto grid max-w-[1200px] gap-12 px-4 md:grid-cols-2">
-      <div>
-        <h2 class="font-display text-3xl font-bold tracking-tight">Conversemos sobre tu proyecto</h2>
-        <p class="mt-4 text-fg-muted">Déjanos tus datos y un especialista te contactará.</p>
-        <address class="mt-8 space-y-2 not-italic">
-          <p>Av. La Molina 145, Ate, Lima</p>
-          <p><a href="mailto:info@tekinsof.com" class="text-link">info@tekinsof.com</a></p>
-          <p><a href={whatsappHref} class="text-link">WhatsApp +51 981 053 022</a></p>
-          <p><a href={site.bookingsUrl} class="text-link">Agenda una reunión</a></p>
-        </address>
-      </div>
-      <div class="rounded-[var(--radius-card)] bg-background p-6">
-        <LeadForm client:visible apiUrl={site.apiUrl} siteKey={site.siteKey} services={services} consentVersion={site.consentVersion} />
-      </div>
-    </div>
-  </section>
+  <Hero whatsappHref={whatsappHref} stats={stats} />
+  <Services groups={groups} />
+  <Timeline />
+  <Automation aiHref={ai && `/servicios/${ai.slug}`} />
+  <Marketing />
+  <Technologies />
+  <Cases />
+  <Benefits />
+  <SocialProof />
+  <FinalCta whatsappHref={whatsappHref} />
+  <Contact whatsappHref={whatsappHref} services={services} />
 </Base>

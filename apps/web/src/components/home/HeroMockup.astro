@@ -1,0 +1,131 @@
+---
+// Illustrative "command centre": a CRM/BI window plus floating ERP, WhatsApp and campaign cards.
+// Purely decorative (aria-hidden); the values are sample UI, labelled as such in the window chrome.
+import Icon from "../ui/Icon.astro";
+
+const kpis = [
+  { label: "Leads nuevos", value: "128", delta: "+18%" },
+  { label: "Respuesta media", value: "2,1 h", delta: "−32%" },
+  { label: "Oportunidades", value: "42", delta: "+9%" },
+];
+const pipeline = [
+  { stage: "Nuevo", width: "w-full" },
+  { stage: "Contactado", width: "w-4/5" },
+  { stage: "Propuesta", width: "w-3/5" },
+  { stage: "Ganado", width: "w-2/5" },
+];
+const spark = ["h-3", "h-5", "h-4", "h-7", "h-6", "h-9", "h-8", "h-11"];
+---
+
+<div aria-hidden="true" class="relative mx-auto w-full max-w-xl select-none lg:max-w-none">
+  <div class="enter enter-2 [perspective:1600px]">
+    <div
+      class="rounded-[var(--radius-card)] border border-border bg-surface/90 shadow-float backdrop-blur-xl lg:[transform:rotateY(-10deg)_rotateX(4deg)]"
+    >
+      <div class="flex items-center gap-2 border-b border-border px-4 py-3">
+        <span class="size-3 rounded-full bg-border"></span>
+        <span class="size-3 rounded-full bg-border"></span>
+        <span class="size-3 rounded-full bg-border"></span>
+        <span class="ml-2 font-mono text-xs text-fg-muted">panel comercial</span>
+        <span class="eyebrow ml-auto text-fg-muted">Vista ilustrativa</span>
+      </div>
+      <div class="grid gap-4 p-4 sm:p-6">
+        <div class="grid grid-cols-3 gap-3">
+          {
+            kpis.map((kpi) => (
+              <div class="rounded-[var(--radius-control)] border border-border bg-background/60 p-3">
+                <p class="text-xs text-fg-muted">{kpi.label}</p>
+                <p class="mt-1 font-display text-xl font-bold tabular-nums sm:text-2xl">{kpi.value}</p>
+                <p class="mt-1 text-xs font-medium text-success tabular-nums">{kpi.delta}</p>
+              </div>
+            ))
+          }
+        </div>
+        <div class="rounded-[var(--radius-control)] border border-border bg-background/60 p-4">
+          <div class="flex items-center justify-between">
+            <p class="text-sm font-medium">Leads por semana</p>
+            <p class="eyebrow text-fg-muted">Power BI</p>
+          </div>
+          <svg viewBox="0 0 320 112" class="mt-3 h-28 w-full text-lilac" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="hero-area" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0" stop-color="currentColor" stop-opacity="0.45"></stop>
+                <stop offset="1" stop-color="currentColor" stop-opacity="0"></stop>
+              </linearGradient>
+            </defs>
+            <path
+              d="M0 92 C30 86 48 70 80 72 S130 52 160 56 S214 30 240 34 S292 12 320 8 V112 H0 Z"
+              fill="url(#hero-area)"></path>
+            <path
+              d="M0 92 C30 86 48 70 80 72 S130 52 160 56 S214 30 240 34 S292 12 320 8"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              vector-effect="non-scaling-stroke"></path>
+            <path
+              d="M0 100 C40 98 70 90 100 92 S170 80 200 82 S270 66 320 60"
+              fill="none"
+              class="text-fg-muted"
+              stroke="currentColor"
+              stroke-dasharray="4 6"
+              stroke-width="1.5"
+              vector-effect="non-scaling-stroke"></path>
+          </svg>
+        </div>
+        <div class="grid gap-2">
+          {
+            pipeline.map((row) => (
+              <div class="grid grid-cols-[96px_1fr] items-center gap-3 text-xs text-fg-muted">
+                <span>{row.stage}</span>
+                <span class="h-2 rounded-full bg-border">
+                  <span class:list={["block h-2 rounded-full bg-lilac/70", row.width]} />
+                </span>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating cards: different depths and float speeds give the composition its parallax. -->
+  <div class="enter enter-3 absolute -top-16 -left-4 hidden sm:block lg:-left-12">
+    <div class="float flex items-center gap-3 rounded-[var(--radius-card)] border border-border bg-surface/95 p-3 pr-5 shadow-float backdrop-blur">
+      <span class="inline-flex size-10 items-center justify-center rounded-[var(--radius-control)] bg-success/15 text-success">
+        <Icon name="check" class="size-5" />
+      </span>
+      <span>
+        <span class="block text-sm font-semibold">ERP sincronizado</span>
+        <span class="block text-xs text-fg-muted">Ventas · inventario · finanzas</span>
+      </span>
+    </div>
+  </div>
+
+  <div class="enter enter-4 absolute -right-2 top-1/3 hidden md:block xl:-right-8">
+    <div class="float-late w-48 rounded-[var(--radius-card)] border border-border bg-surface/95 p-4 shadow-float backdrop-blur">
+      <div class="flex items-center gap-2 text-xs text-fg-muted">
+        <Icon name="target" class="size-4" /> Google Ads · activa
+      </div>
+      <div class="mt-3 flex h-12 items-end gap-1">
+        {spark.map((h) => <span class:list={["w-full rounded-sm bg-lilac/60", h]} />)}
+      </div>
+    </div>
+  </div>
+
+  <div class="enter enter-4 absolute -bottom-10 left-6 hidden sm:block lg:-left-6">
+    <div class="float w-72 rounded-[var(--radius-card)] border border-border bg-surface/95 p-4 shadow-float backdrop-blur">
+      <div class="flex items-center gap-3">
+        <span class="relative inline-flex size-10 items-center justify-center rounded-full bg-success text-primary-fg">
+          <Icon name="message-circle" class="size-5" />
+        </span>
+        <span>
+          <span class="block text-sm font-semibold">Nuevo lead asignado</span>
+          <span class="block text-xs text-fg-muted">WhatsApp Business · ahora</span>
+        </span>
+      </div>
+      <p class="mt-3 rounded-[var(--radius-control)] bg-background/70 p-3 text-xs text-fg-muted">
+        “Hola, quiero cotizar una integración de nuestro ERP con el CRM.”
+      </p>
+    </div>
+  </div>
+</div>

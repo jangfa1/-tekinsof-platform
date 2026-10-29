@@ -1,0 +1,40 @@
+---
+import Button from "../ui/Button.astro";
+import Icon from "../ui/Icon.astro";
+
+interface Props {
+  whatsappHref: string;
+}
+
+const { whatsappHref } = Astro.props;
+---
+
+<section class="px-4 py-12">
+  <div class="theme-ink relative isolate mx-auto max-w-[1200px] overflow-hidden rounded-[var(--radius-card)] px-6 py-20 md:px-16 md:py-24">
+    <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+      <div class="bg-dots absolute inset-0"></div>
+      <div class="parallax-slow absolute -top-16 right-8 flex gap-6 md:right-24">
+        <span class="h-160 w-14 -skew-x-12 rounded-full bg-surface"></span>
+        <span class="mt-16 h-160 w-14 -skew-x-12 rounded-full bg-lilac/30"></span>
+        <span class="mt-32 h-160 w-14 -skew-x-12 rounded-full bg-surface-accent"></span>
+      </div>
+    </div>
+    <div class="reveal max-w-2xl">
+      <p class="eyebrow text-fg-muted">Empecemos</p>
+      <h2 class="mt-6 text-balance font-display text-4xl leading-[1.05] font-bold tracking-tight md:text-6xl">
+        Tu próximo proyecto empieza con una conversación.
+      </h2>
+      <p class="mt-6 max-w-xl text-lg text-fg-muted">
+        Cuéntanos qué necesitas. Un especialista revisa tu caso y te responde en menos de 4 horas
+        laborables.
+      </p>
+      <div class="mt-10 flex flex-wrap gap-4">
+        <Button href="#contacto" size="lg" icon="arrow-right">Cotiza tu proyecto</Button>
+        <Button href={whatsappHref} variant="outline" size="lg">
+          <Icon name="message-circle" class="size-5 text-success" />
+          WhatsApp
+        </Button>
+      </div>
+    </div>
+  </div>
+</section>

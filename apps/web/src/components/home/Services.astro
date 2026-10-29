@@ -1,0 +1,116 @@
+---
+import type { ServiceGroup } from "../../lib/content.ts";
+import { serviceIcon } from "../../lib/home-content.ts";
+import Icon from "../ui/Icon.astro";
+import SectionHeading from "../ui/SectionHeading.astro";
+
+interface Props {
+  groups: ServiceGroup[];
+}
+
+const { groups } = Astro.props;
+const tech = groups.find((g) => g.services[0]?.category === "tecnologia");
+const marketing = groups.find((g) => g.services[0]?.category === "marketing");
+const nodes = ["ERP", "CRM", "BI"];
+---
+
+<section id="servicios" class="relative py-24 md:py-32">
+  <div aria-hidden="true" class="bg-dots-light pointer-events-none absolute inset-x-0 top-0 h-96"></div>
+  <div class="relative mx-auto max-w-[1200px] px-4">
+    <SectionHeading
+      index="01"
+      eyebrow="Servicios"
+      title="Dos especialidades, un mismo objetivo: que tu empresa venda y opere mejor."
+      lead="La tecnología ordena y automatiza tu operación; el marketing digital trae a los clientes. Nosotros hacemos ambas cosas y las conectamos."
+    />
+
+    {
+      tech && (
+        <div class="theme-ink reveal-scale relative mt-16 overflow-hidden rounded-[var(--radius-card)] p-6 md:p-10">
+          <div aria-hidden="true" class="bg-dots absolute inset-0" />
+          <div class="relative flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p class="eyebrow text-fg-muted">Tecnología</p>
+              <h3 class="mt-3 font-display text-2xl font-bold tracking-tight md:text-3xl">
+                Software, datos e infraestructura
+              </h3>
+            </div>
+            <p class="font-mono text-sm text-fg-muted">{tech.services.length} servicios destacados</p>
+          </div>
+          <ul class="relative mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {tech.services.map((service, i) => (
+              <li class:list={[i === 0 && "sm:col-span-2"]}>
+                <a
+                  href={`/servicios/${service.slug}`}
+                  class="card-premium flex h-full flex-col rounded-[var(--radius-card)] border border-border bg-surface p-5"
+                >
+                  <span class="flex items-start justify-between">
+                    <span class="inline-flex size-11 items-center justify-center rounded-[var(--radius-control)] border border-border bg-background text-lilac">
+                      <Icon name={serviceIcon(service.slug, service.category)} class="size-5" />
+                    </span>
+                    <Icon name="arrow-up-right" class="card-arrow size-5 text-fg-muted" />
+                  </span>
+                  <span class="mt-6 block font-display text-lg font-semibold">{service.name}</span>
+                  <span class="mt-2 block text-sm text-fg-muted">{service.summary}</span>
+                  {i === 0 && (
+                    <span aria-hidden="true" class="mt-auto hidden items-center gap-3 pt-6 sm:flex">
+                      {nodes.map((node, n) => (
+                        <>
+                          {n > 0 && <span class="h-px flex-1 bg-linear-to-r from-border via-lilac/60 to-border" />}
+                          <span class="rounded-[var(--radius-control)] border border-border bg-background px-3 py-2 font-mono text-xs">
+                            {node}
+                          </span>
+                        </>
+                      ))}
+                    </span>
+                  )}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    {
+      marketing && (
+        <div class="reveal-scale mt-6 grid gap-8 rounded-[var(--radius-card)] bg-surface-accent/50 p-6 md:p-10 lg:grid-cols-[1fr_1.6fr]">
+          <div class="flex flex-col">
+            <p class="eyebrow text-fg-muted">Marketing digital</p>
+            <h3 class="mt-3 font-display text-2xl font-bold tracking-tight md:text-3xl">
+              Marca, campañas y prospectos
+            </h3>
+            <p class="mt-4 text-fg-muted">
+              Branding, SEO y anuncios en Google, Facebook, Instagram y TikTok conectados a WhatsApp
+              Business y a tu equipo comercial.
+            </p>
+            <ul aria-hidden="true" class="mt-8 flex flex-wrap gap-2 lg:mt-auto">
+              {["SEO", "Google Ads", "Meta Ads", "TikTok Ads", "WhatsApp"].map((chip) => (
+                <li class="rounded-full border border-fg/10 bg-background px-3 py-1 text-xs font-medium">{chip}</li>
+              ))}
+            </ul>
+          </div>
+          <ul class="grid gap-4 sm:grid-cols-2">
+            {marketing.services.map((service) => (
+              <li>
+                <a
+                  href={`/servicios/${service.slug}`}
+                  class="card-premium flex h-full flex-col rounded-[var(--radius-card)] border border-border bg-background p-5"
+                >
+                  <span class="flex items-start justify-between">
+                    <span class="inline-flex size-11 items-center justify-center rounded-[var(--radius-control)] bg-surface-accent text-fg">
+                      <Icon name={serviceIcon(service.slug, service.category)} class="size-5" />
+                    </span>
+                    <Icon name="arrow-up-right" class="card-arrow size-5 text-fg-muted" />
+                  </span>
+                  <span class="mt-6 block font-display text-lg font-semibold">{service.name}</span>
+                  <span class="mt-2 block text-sm text-fg-muted">{service.summary}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+  </div>
+</section>
