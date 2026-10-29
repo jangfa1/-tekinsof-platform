@@ -1,0 +1,16 @@
+---
+interface Props {
+  index?: string;
+  /** The default link colour fails contrast on lilac bands. */
+  indexClass?: string;
+  class?: string;
+}
+
+const { index, indexClass = "text-link", class: className = "text-fg-muted" } = Astro.props;
+---
+
+<p class:list={["eyebrow flex items-center gap-2", className]}>
+  {index && <span class={indexClass}>{index}</span>}
+  {index && <span aria-hidden="true" class="h-px w-6 bg-current opacity-40"></span>}
+  <slot />
+</p>

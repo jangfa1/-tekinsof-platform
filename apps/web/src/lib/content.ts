@@ -27,8 +27,12 @@ const categoryTitles: Record<string, string> = {
   marketing: "Marketing digital",
 };
 
+// Every page (and the shared header and footer) reads the catalog; query it once per build.
+let published: Promise<Service[]> | undefined;
+
 export function getPublishedServices(): Promise<Service[]> {
-  return listServices(getDb(), { activeOnly: true, publishedOnly: true });
+  published ??= listServices(getDb(), { activeOnly: true, publishedOnly: true });
+  return published;
 }
 
 export async function getFeaturedServices(): Promise<ServiceGroup[]> {

@@ -1,0 +1,39 @@
+---
+import Eyebrow from "./Eyebrow.astro";
+
+interface Props {
+  index: string;
+  eyebrow: string;
+  title: string;
+  lead?: string;
+  align?: "split" | "center";
+}
+
+const { index, eyebrow, title, lead, align = "split" } = Astro.props;
+---
+
+{
+  align === "split" ? (
+    <div class="reveal grid gap-6 lg:grid-cols-[280px_1fr] lg:gap-12">
+      <Eyebrow index={index} class="text-fg-muted lg:pt-4">
+        {eyebrow}
+      </Eyebrow>
+      <div>
+        <h2 class="text-balance font-display text-3xl font-bold tracking-tight md:text-5xl md:leading-[1.05]">
+          {title}
+        </h2>
+        {lead && <p class="mt-6 max-w-2xl text-lg text-fg-muted">{lead}</p>}
+      </div>
+    </div>
+  ) : (
+    <div class="reveal mx-auto max-w-3xl text-center">
+      <Eyebrow index={index} class="justify-center text-fg-muted">
+        {eyebrow}
+      </Eyebrow>
+      <h2 class="mt-6 text-balance font-display text-3xl font-bold tracking-tight md:text-5xl md:leading-[1.05]">
+        {title}
+      </h2>
+      {lead && <p class="mx-auto mt-6 max-w-2xl text-lg text-fg-muted">{lead}</p>}
+    </div>
+  )
+}

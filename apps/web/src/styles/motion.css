@@ -1,0 +1,231 @@
+/* Motion for the public site: scroll-driven reveals, ambient loops and their keyframes.
+   Imported by global.css; only transform and opacity are animated. */
+
+/* Scroll-driven motion. Without support (or with reduced motion) everything is simply visible. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 45%;
+    }
+
+    .reveal-2 {
+      animation-range: entry 8% entry 53%;
+    }
+
+    .reveal-3 {
+      animation-range: entry 16% entry 61%;
+    }
+
+    .reveal-scale {
+      animation: reveal-scale linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 35%;
+    }
+
+    .parallax-slow {
+      animation: parallax linear both;
+      animation-timeline: view();
+    }
+
+    .track-fill {
+      animation: track-x linear both;
+      animation-timeline: view();
+      animation-range: entry 40% cover 60%;
+    }
+
+    @media (max-width: 1023px) {
+      .track-fill {
+        animation-name: track-y;
+      }
+    }
+
+    /* Mobile CTA bar slides in once the hero is behind. */
+    .after-hero {
+      animation: slide-up linear both;
+      animation-timeline: scroll(root);
+      animation-range: 70vh 90vh;
+    }
+  }
+
+  /* Ambient loops (approved exception to the 120/180/240ms transition scale). */
+  .drift {
+    animation: drift 24s ease-in-out infinite alternate;
+  }
+
+  .drift-reverse {
+    animation: drift 30s ease-in-out infinite alternate-reverse;
+  }
+
+  .float {
+    animation: float 8s ease-in-out infinite alternate;
+  }
+
+  .float-late {
+    animation: float 10s ease-in-out -4s infinite alternate;
+  }
+
+  .packet {
+    animation: packet 4s linear infinite;
+  }
+
+  .marquee {
+    animation: marquee 40s linear infinite;
+  }
+
+  .marquee-wrap:hover .marquee,
+  .marquee-wrap:focus-within .marquee {
+    animation-play-state: paused;
+  }
+
+  .ping {
+    animation: ping 1.6s var(--ease-out) 3;
+  }
+
+  .wa-tip {
+    animation: wa-tip 6s 8s 1;
+  }
+
+  .enter {
+    animation: reveal 600ms var(--ease-out) both;
+  }
+
+  .enter-2 {
+    animation-delay: 120ms;
+  }
+
+  .enter-3 {
+    animation-delay: 240ms;
+  }
+
+  .enter-4 {
+    animation-delay: 360ms;
+  }
+}
+
+@keyframes reveal {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes reveal-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes parallax {
+  from {
+    transform: translateY(48px);
+  }
+  to {
+    transform: translateY(-48px);
+  }
+}
+
+@keyframes track-x {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes track-y {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(64px, 32px, 0) scale(1.15);
+  }
+}
+
+@keyframes float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes packet {
+  from {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  10%,
+  90% {
+    opacity: 1;
+  }
+  to {
+    transform: translateX(var(--packet-distance, 100%));
+    opacity: 0;
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes wa-tip {
+  from,
+  to {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  8%,
+  88% {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ping {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}

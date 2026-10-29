@@ -1,0 +1,60 @@
+---
+import type { Service } from "@tekinsof/core/catalog/services";
+
+interface Props {
+  services: Service[];
+}
+
+const { services } = Astro.props;
+const featured = services.filter((s) => s.isFeatured);
+const columns = [
+  { title: "Tecnología", items: featured.filter((s) => s.category === "tecnologia").slice(0, 6) },
+  {
+    title: "Marketing digital",
+    items: featured.filter((s) => s.category === "marketing").slice(0, 6),
+  },
+];
+const year = new Date().getFullYear();
+---
+
+<footer class="theme-ink relative overflow-hidden pb-28 md:pb-0">
+  <div class="mx-auto grid max-w-[1200px] gap-12 px-4 pt-20 pb-12 text-sm md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+    <div>
+      <p class="flex items-center gap-3 font-display text-xl font-bold">
+        <span aria-hidden="true" class="flex gap-1">
+          <span class="h-6 w-2 -skew-x-12 rounded-full bg-fg"></span>
+          <span class="h-6 w-2 -skew-x-12 rounded-full bg-accent"></span>
+          <span class="h-6 w-2 -skew-x-12 rounded-full bg-lilac"></span>
+        </span>
+        Tekinsof Consulting
+      </p>
+      <p class="mt-4 max-w-xs text-fg-muted">Tecnología y marketing digital para empresas en Perú.</p>
+    </div>
+    {
+      columns.map((col) => (
+        <div>
+          <p class="eyebrow text-fg-muted">{col.title}</p>
+          <ul class="mt-4 grid gap-1">
+            {col.items.map((s) => (
+              <li>
+                <a href={`/servicios/${s.slug}`} class="inline-flex min-h-9 items-center hover:text-link">{s.name}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))
+    }
+    <div>
+      <p class="eyebrow text-fg-muted">Contacto</p>
+      <address class="mt-4 grid gap-2 not-italic text-fg-muted">
+        <span>Av. La Molina 145, Ate, Lima</span>
+        <a href="mailto:info@tekinsof.com" class="text-link">info@tekinsof.com</a>
+        <a href="tel:+51981053022" class="text-link">+51 981 053 022</a>
+      </address>
+    </div>
+  </div>
+  <div class="mx-auto flex max-w-[1200px] flex-wrap items-center justify-between gap-4 border-t border-border px-4 py-6 text-xs text-fg-muted">
+    <p>© {year} Tekinsof Consulting</p>
+    <a href="/privacidad" class="inline-flex min-h-9 items-center hover:text-link">Política de privacidad</a>
+  </div>
+</footer>

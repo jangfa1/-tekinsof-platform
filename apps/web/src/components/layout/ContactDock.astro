@@ -1,0 +1,61 @@
+---
+// Floating WhatsApp button (tablet/desktop) and the bottom CTA bar (mobile), always one tap away.
+import Icon from "../ui/Icon.astro";
+
+interface Props {
+  whatsappHref: string;
+}
+
+const { whatsappHref } = Astro.props;
+---
+
+<div class="fixed right-6 bottom-6 z-40 hidden md:block">
+  <span
+    aria-hidden="true"
+    class="wa-tip pointer-events-none absolute right-full bottom-2 mr-4 w-max rounded-[var(--radius-control)] border border-border bg-background px-4 py-3 text-sm shadow-dialog"
+  >
+    <span class="block font-semibold">¿Hablamos?</span>
+    <span class="block text-xs text-fg-muted">Te respondemos por WhatsApp</span>
+  </span>
+  <a
+    id="whatsapp-float"
+    data-wa
+    href={whatsappHref}
+    aria-label="Escríbenos por WhatsApp"
+    class="press group relative inline-flex size-14 items-center justify-center rounded-full bg-success text-primary-fg shadow-float"
+  >
+    <span aria-hidden="true" class="ping absolute inset-0 rounded-full bg-success"></span>
+    <svg viewBox="0 0 24 24" aria-hidden="true" class="relative size-7 fill-current transition-transform duration-180 group-hover:scale-110">
+      <path
+        d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.2.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.4.1.1.1.7-.2 1.3Z"
+      ></path>
+    </svg>
+  </a>
+</div>
+
+<nav
+  aria-label="Acciones rápidas"
+  class="after-hero fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t border-border bg-background/90 p-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden"
+>
+  <a href="/#contacto" class="press inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-accent text-sm font-semibold text-accent-fg">
+    Cotizar <Icon name="arrow-right" class="size-4" />
+  </a>
+  <a data-wa href={whatsappHref} class="press inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-success text-sm font-semibold text-primary-fg">
+    <Icon name="message-circle" class="size-4" /> WhatsApp
+  </a>
+</nav>
+
+<script is:inline>
+  // Tag every WhatsApp link with the first-touch campaign stored by the lead form.
+  try {
+    var stored = JSON.parse(sessionStorage.getItem("tk_utm") || "null");
+    var campaign = stored && stored.utm && stored.utm.campaign;
+    if (campaign) {
+      document.querySelectorAll("a[data-wa]").forEach(function (link) {
+        var url = new URL(link.href);
+        url.searchParams.set("text", url.searchParams.get("text") + " [" + campaign + "]");
+        link.href = url.toString();
+      });
+    }
+  } catch (e) {}
+</script>

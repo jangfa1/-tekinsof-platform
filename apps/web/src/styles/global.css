@@ -1,6 +1,8 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/plus-jakarta-sans";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "./motion.css";
 
 /* Landing blocks (packages/core/src/cms/blocks.tsx, step 17) use utility classes too. */
 @source "../../../../packages/core";
@@ -22,6 +24,34 @@
   --destructive: #b42318;
   --success: #067647;
   --warning: #b54708;
+  --lilac: #e7dbe7;
+  --shadow-dialog: 0 10px 30px rgb(18 20 23 / 0.18);
+  --shadow-float: 0 24px 60px rgb(18 20 23 / 0.28);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Ink bands (hero, automation, final CTA, footer) reuse the CRM dark tokens; this is not dark mode. */
+.theme-ink {
+  --background: #121417;
+  --surface: #1e2126;
+  --surface-accent: #2c2530;
+  --border: #2e323a;
+  --fg: #ecedee;
+  --fg-muted: #a3a8b3;
+  --primary: #ecedee;
+  --primary-fg: #1e2126;
+  --link: #ff9c80;
+  --focus: #ff9c80;
+  --success: #47cd89;
+  --warning: #fdb022;
+}
+
+/* Layered so utilities such as bg-background/70 can still override the band colour. */
+@layer base {
+  .theme-ink {
+    background-color: var(--background);
+    color: var(--fg);
+  }
 }
 
 @theme inline {
@@ -40,11 +70,25 @@
   --color-destructive: var(--destructive);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-lilac: var(--lilac);
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
   --font-display:
     "Plus Jakarta Sans Variable", "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
   --radius-control: 10px;
   --radius-card: 14px;
+  --shadow-dialog: var(--shadow-dialog);
+  --shadow-float: var(--shadow-float);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+}
+
+/* Cross-document view transitions: page changes cross-fade without any router script. */
+@view-transition {
+  navigation: auto;
 }
 
 :focus-visible {
@@ -52,7 +96,118 @@
   outline-offset: 2px;
 }
 
+/* Technical eyebrow: "01 · SERVICIOS". */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* Masked dot grid behind hero and ink bands. */
+.bg-dots {
+  background-image: radial-gradient(rgb(236 237 238 / 0.12) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 75%);
+}
+
+.bg-dots-light {
+  background-image: radial-gradient(rgb(30 33 38 / 0.08) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, #000 20%, transparent 70%);
+}
+
+/* Soft colour fields; they only ever move with transform. */
+.glow {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(64px);
+  pointer-events: none;
+}
+
+/* Premium card: lift on hover and a light rim that sits on the border. */
+.card-premium {
+  position: relative;
+  transition:
+    transform 240ms var(--ease-out),
+    opacity 240ms var(--ease-out);
+}
+
+.card-premium::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  border: 1px solid var(--link);
+  transition: opacity 180ms var(--ease-out);
+}
+
+.card-premium:hover,
+.card-premium:focus-visible {
+  transform: translateY(-4px);
+}
+
+.card-premium:hover::after,
+.card-premium:focus-visible::after {
+  opacity: 1;
+}
+
+.card-premium .card-arrow {
+  transition: transform 180ms var(--ease-out);
+}
+
+.card-premium:hover .card-arrow,
+.card-premium:focus-visible .card-arrow {
+  transform: translate(4px, -4px);
+}
+
+.press {
+  transition: transform 120ms var(--ease-out);
+}
+
+.press:active {
+  transform: scale(0.97);
+}
+
+/* WhatsApp tip: on hover/focus, and once by itself 8 s after load. */
+.wa-tip {
+  opacity: 0;
+  transform: translateX(8px);
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out);
+}
+
+div:has(> a:hover) > .wa-tip,
+div:has(> a:focus-visible) > .wa-tip {
+  opacity: 1;
+  transform: none;
+}
+
+/* Fills a timeline track: scaleX on desktop, scaleY when the track is vertical. */
+.track-fill {
+  transform-origin: left center;
+}
+
+@media (max-width: 1023px) {
+  .track-fill {
+    transform-origin: center top;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
   *,
   *::before,
   *::after {

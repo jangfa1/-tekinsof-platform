@@ -1,0 +1,41 @@
+---
+import type { IconName } from "../../lib/icons.ts";
+import Icon from "./Icon.astro";
+
+interface Props {
+  href: string;
+  variant?: "accent" | "outline" | "light";
+  size?: "md" | "lg";
+  icon?: IconName;
+  class?: string;
+}
+
+const { href, variant = "accent", size = "md", icon, class: className = "" } = Astro.props;
+
+const variants = {
+  accent: "bg-accent text-accent-fg hover:shadow-[0_8px_24px_rgb(255_127_92/0.35)]",
+  outline: "border border-border bg-background/40 text-fg backdrop-blur hover:border-fg-muted",
+  light: "bg-primary text-primary-fg",
+};
+const sizes = { md: "min-h-11 px-5 text-sm", lg: "min-h-12 px-6 text-base" };
+---
+
+<a
+  href={href}
+  class:list={[
+    "press group inline-flex items-center justify-center gap-2 rounded-[var(--radius-control)] font-semibold transition-[transform,box-shadow,border-color] duration-180",
+    variants[variant],
+    sizes[size],
+    className,
+  ]}
+>
+  <slot />
+  {
+    icon && (
+      <Icon
+        name={icon}
+        class="size-4 transition-transform duration-180 group-hover:translate-x-1"
+      />
+    )
+  }
+</a>
