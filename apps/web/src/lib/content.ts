@@ -14,7 +14,7 @@ export const site = {
   apiUrl: process.env.PUBLIC_LEADS_API_URL || "http://localhost:3000/api/public/leads",
   siteKey: process.env.PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA",
   bookingsUrl: process.env.PUBLIC_BOOKINGS_URL || "#contacto",
-  consentVersion: "2026-10",
+  consentVersion: "2026-10-30",
 };
 
 // Contact data is fixed (packages/core/src/company.ts), not configurable per environment.

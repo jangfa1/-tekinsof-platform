@@ -1,6 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
-import { company } from "../lib/content.ts";
+import { company, site } from "../lib/content.ts";
+import { activeTrackers } from "../lib/tracking.ts";
 
 // Final wording is validated by the client's legal advisor before launch (blueprint §20.1).
 ---
@@ -12,7 +13,7 @@ import { company } from "../lib/content.ts";
 >
   <article class="mx-auto max-w-[72ch] space-y-6 px-4 py-16">
     <h1 class="font-display text-3xl font-bold tracking-tight">Política de privacidad</h1>
-    <p class="text-fg-muted">Versión 2026-10</p>
+    <p class="text-fg-muted">Versión {site.consentVersion}</p>
 
     <p>
       Esta política explica cómo tratamos los datos personales que nos entregas, conforme a la Ley N.°
@@ -25,23 +26,76 @@ import { company } from "../lib/content.ts";
     <h2 class="font-display text-xl font-semibold">Datos que recogemos</h2>
     <p>
       Los que ingresas en nuestros formularios (nombre, correo, teléfono, empresa, servicio de interés y
-      mensaje) y los que compartes al escribirnos por WhatsApp. También registramos el origen de tu
-      visita (por ejemplo, la campaña publicitaria) para saber cómo nos encontraste.
+      mensaje) y los que compartes al escribirnos por WhatsApp. También recibimos los datos que ingresas
+      en los formularios de nuestros anuncios en Facebook, Instagram, Google y TikTok, que esas
+      plataformas nos envían cuando los completas.
+    </p>
+    <p>
+      Registramos además el origen de tu visita para saber cómo nos encontraste: la campaña publicitaria
+      (parámetros UTM), la página desde la que llegaste y el identificador de clic que agregan Google,
+      Meta o TikTok al enlace de un anuncio. Lo guardamos junto con tu solicitud solo si nos escribes.
     </p>
 
     <h2 class="font-display text-xl font-semibold">Finalidad</h2>
     <p>
       Atender tu solicitud y enviarte comunicaciones comerciales relacionadas con ella, como propuestas y
-      cotizaciones.
+      cotizaciones. Con tu consentimiento, también medir el resultado de nuestros anuncios.
     </p>
+
+    <h2 class="font-display text-xl font-semibold">Cookies y herramientas de medición</h2>
+    {
+      activeTrackers.length === 0 ? (
+        <p>Este sitio no usa cookies de medición ni de publicidad.</p>
+      ) : (
+        <>
+          <p>
+            Solo si aceptas en el aviso de cookies, el sitio carga estas herramientas de publicidad y
+            analítica, que instalan cookies y registran las páginas que visitas y si enviaste un
+            formulario (sin su contenido):
+          </p>
+          <ul class="list-disc space-y-2 pl-6">
+            {activeTrackers.map((tracker) => (
+              <li>
+                {tracker.name}, de {tracker.company} (
+                <a href={tracker.privacyUrl} class="text-link" rel="noopener" target="_blank">
+                  su política de privacidad
+                </a>
+                ).
+              </li>
+            ))}
+          </ul>
+          <p>
+            Si rechazas, no se carga ninguna. Tu elección se guarda en tu navegador y puedes cambiarla en
+            cualquier momento:
+          </p>
+          <button
+            type="button"
+            id="consent-reset"
+            class="min-h-9 rounded-[var(--radius-control)] border border-border px-4 text-sm font-medium"
+          >
+            Cambiar mis preferencias de cookies
+          </button>
+          <script is:inline>
+            document.getElementById("consent-reset").addEventListener("click", function () {
+              try { localStorage.removeItem("tk_consent"); } catch (e) {}
+              location.reload();
+            });
+          </script>
+        </>
+      )
+    }
 
     <h2 class="font-display text-xl font-semibold">Conservación</h2>
     <p>Conservamos tus datos por 24 meses desde nuestro último contacto contigo.</p>
 
-    <h2 class="font-display text-xl font-semibold">Destinatarios</h2>
+    <h2 class="font-display text-xl font-semibold">Destinatarios y transferencias</h2>
     <p>
       No vendemos tus datos. Los comparten con nosotros, en calidad de encargados del tratamiento, los
-      proveedores de alojamiento web y de correo electrónico que usamos para operar.
+      proveedores de alojamiento web y de correo electrónico que usamos para operar, y Cloudflare, que
+      verifica que los formularios los envía una persona y no un programa automático. Las plataformas
+      publicitarias indicadas reciben la información de navegación descrita arriba cuando aceptas sus
+      cookies. Algunos de estos proveedores tratan los datos fuera del Perú (por ejemplo, en Estados
+      Unidos o la Unión Europea).
     </p>
 
     <h2 class="font-display text-xl font-semibold">Tus derechos (ARCO)</h2>
