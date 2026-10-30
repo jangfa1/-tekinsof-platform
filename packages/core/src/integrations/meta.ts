@@ -71,17 +71,15 @@ export type MetaLead = z.infer<typeof metaLeadSchema>;
 
 const leadFields = "id,created_time,ad_id,adset_id,campaign_id,form_id,field_data,platform";
 
-// The token travels in the Authorization header so it never lands in URL logs.
-export async function fetchMetaLead(
-  deps: MetaDeps,
-  leadgenId: string,
-  pageToken: string,
-): Promise<Result<MetaLead>> {
-  const url = `https://graph.facebook.com/${deps.graphVersion}/${encodeURIComponent(leadgenId)}?fields=${leadFields}`;
+const GRAPH_ORIGIN = "https://graph.facebook.com/";
+
+// The token travels in the Authorization header so it never lands in URL logs. Errors carry
+// `fields.graphCode` (Graph's error code, or the HTTP status when there is none).
+async function graphGet(deps: MetaDeps, url: string, token: string): Promise<Result<unknown>> {
   let body: unknown;
   let status: number;
   try {
-    const res = await deps.fetch(url, { headers: { Authorization: `Bearer ${pageToken}` } });
+    const res = await deps.fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     status = res.status;
     body = await res.json();
   } catch (error) {
@@ -93,7 +91,79 @@ export async function fetchMetaLead(
       graphCode: String(graph?.code ?? status),
     });
   }
-  const lead = metaLeadSchema.safeParse(body);
+  return ok(body);
+}
+
+// Graph code 190 (OAuthException) or a bare 401: the token expired or was revoked.
+export function isExpiredTokenError(error: { fields?: Record<string, string> }): boolean {
+  const code = error.fields?.graphCode;
+  return code === "190" || code === "401";
+}
+
+const MAX_PAGES = 20;
+const page = <T extends z.ZodType>(item: T) =>
+  z.object({
+    data: z.array(item).default([]),
+    paging: z.object({ next: z.string().optional() }).optional(),
+  });
+
+// Follows `paging.next` (only back to Graph itself) up to MAX_PAGES pages.
+async function graphList<T extends z.ZodType>(
+  deps: MetaDeps,
+  firstUrl: string,
+  token: string,
+  item: T,
+): Promise<Result<z.infer<T>[]>> {
+  const items: z.infer<T>[] = [];
+  let url: string | undefined = firstUrl;
+  for (let n = 0; url && n < MAX_PAGES; n++) {
+    const body = await graphGet(deps, url, token);
+    if (!body.ok) return body;
+    const parsed = page(item).safeParse(body.data);
+    if (!parsed.success) return err("INTERNAL", "Respuesta de Meta inesperada");
+    items.push(...parsed.data.data);
+    const next = parsed.data.paging?.next;
+    url = next?.startsWith(GRAPH_ORIGIN) ? next : undefined;
+  }
+  return ok(items);
+}
+
+const metaFormSchema = z.object({ id: id, name: z.string().optional() });
+export type MetaForm = z.infer<typeof metaFormSchema>;
+
+/** Lead forms of a Page; also proves the Page token still works. */
+export function fetchPageForms(
+  deps: MetaDeps,
+  pageId: string,
+  pageToken: string,
+): Promise<Result<MetaForm[]>> {
+  const url = `${GRAPH_ORIGIN}${deps.graphVersion}/${encodeURIComponent(pageId)}/leadgen_forms?fields=id,name&limit=100`;
+  return graphList(deps, url, pageToken, metaFormSchema);
+}
+
+/** Leads of a form created after `since`. */
+export function fetchFormLeads(
+  deps: MetaDeps,
+  formId: string,
+  since: Date,
+  pageToken: string,
+): Promise<Result<MetaLead[]>> {
+  const filtering = JSON.stringify([
+    { field: "time_created", operator: "GREATER_THAN", value: Math.floor(since.getTime() / 1000) },
+  ]);
+  const url = `${GRAPH_ORIGIN}${deps.graphVersion}/${encodeURIComponent(formId)}/leads?fields=${leadFields}&filtering=${encodeURIComponent(filtering)}&limit=100`;
+  return graphList(deps, url, pageToken, metaLeadSchema);
+}
+
+export async function fetchMetaLead(
+  deps: MetaDeps,
+  leadgenId: string,
+  pageToken: string,
+): Promise<Result<MetaLead>> {
+  const url = `${GRAPH_ORIGIN}${deps.graphVersion}/${encodeURIComponent(leadgenId)}?fields=${leadFields}`;
+  const body = await graphGet(deps, url, pageToken);
+  if (!body.ok) return body;
+  const lead = metaLeadSchema.safeParse(body.data);
   if (!lead.success) return err("INTERNAL", "Respuesta de Meta inesperada");
   return ok(lead.data);
 }

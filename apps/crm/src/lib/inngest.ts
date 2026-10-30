@@ -8,6 +8,7 @@ import {
   slaSweep,
   triggerSiteDeploy,
 } from "@tekinsof/core/automation/sweeps";
+import { metaLeadsBackfill, purgeInboundEvents } from "@tekinsof/core/capture/backfill";
 import { processInbound } from "@tekinsof/core/capture/process-inbound";
 import { getDb } from "@tekinsof/core/db/client";
 import { createMailer } from "@tekinsof/core/integrations/graph";
@@ -113,6 +114,21 @@ const inboundReceived = inngest.createFunction(
     }),
 );
 
+// Safety net for lost Meta webhooks plus the token health check; an expired token mails Gerencia.
+const metaBackfill = inngest.createFunction(
+  { id: "meta-leads-backfill", triggers: [{ cron: "0 * * * *" }] },
+  async ({ step }) =>
+    step.run("meta-leads-backfill", () =>
+      metaLeadsBackfill(getDb(), { ...deps(), ...captureDeps() }, new Date()),
+    ),
+);
+
+// 03:30 Lima: webhook bodies older than 90 days are deleted (personal data).
+const inboundPurge = inngest.createFunction(
+  { id: "inbound-purge", triggers: [{ cron: "30 8 * * *" }] },
+  async ({ step }) => step.run("inbound-purge", () => purgeInboundEvents(getDb(), new Date())),
+);
+
 const approvalRequested = inngest.createFunction(
   { id: "quote-approval-requested", triggers: [{ event: "quote/approval.requested" }] },
   async ({ event, step }) =>
@@ -132,4 +148,6 @@ export const functions = [
   siteDeploy,
   approvalRequested,
   inboundReceived,
+  metaBackfill,
+  inboundPurge,
 ];
