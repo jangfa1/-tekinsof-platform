@@ -49,7 +49,7 @@
       "pnpm test"
     ],
     "checkpoint": "r2-step-02-capture-core",
-    "status": "todo"
+    "status": "done"
   },
   {
     "id": "r2-03",
