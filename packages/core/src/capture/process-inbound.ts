@@ -12,6 +12,7 @@ import {
   toExternalLead,
 } from "../integrations/meta.ts";
 import { decryptSecret } from "../integrations/secrets.ts";
+import { parseTiktokLead, toExternalLead as tiktokToExternalLead } from "../integrations/tiktok.ts";
 import { err, ok, type Result } from "../result.ts";
 import { ingestExternalLead } from "./external-leads.ts";
 import { type InboundOutcome, markInbound } from "./inbound.ts";
@@ -121,6 +122,19 @@ async function processGoogle(
   return ok({ status: "procesado", leadId: ingested.data.leadId });
 }
 
+// The webhook checked the signature; the payload is the full lead in our normalized contract.
+async function processTiktok(
+  db: DbOrTx,
+  event: { id: string; payload: unknown },
+): Promise<Processed> {
+  const lead = parseTiktokLead(event.payload);
+  if (!lead.ok) return settle(db, event.id, "error", "Lead de TikTok inválido");
+  const ingested = await ingestExternalLead(db, tiktokToExternalLead(lead.data));
+  if (!ingested.ok) return settle(db, event.id, "error", ingested.error.message);
+  await markInbound(db, event.id, "procesado");
+  return ok({ status: "procesado", leadId: ingested.data.leadId });
+}
+
 export async function processInbound(
   db: DbOrTx,
   deps: ProcessDeps,
@@ -137,8 +151,9 @@ export async function processInbound(
       return processMeta(db, deps, event);
     case "google_ads":
       return processGoogle(db, event);
+    case "tiktok":
+      return processTiktok(db, event);
     default:
-      // The TikTok adapter (r2-06) plugs in here.
-      return settle(db, event.id, "ignorado", `Proveedor ${event.provider} aún no soportado`);
+      return settle(db, event.id, "ignorado", `Proveedor ${event.provider} no soportado`);
   }
 }

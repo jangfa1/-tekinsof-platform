@@ -144,7 +144,7 @@
       "pnpm test"
     ],
     "checkpoint": "r2-step-06-tiktok-leads",
-    "status": "todo"
+    "status": "done"
   },
   {
     "id": "r2-07",
