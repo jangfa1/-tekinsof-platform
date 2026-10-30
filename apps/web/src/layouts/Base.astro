@@ -34,7 +34,8 @@ const ogImage = new URL(image, "https://tekinsof.com").toString();
 const ga4 = process.env.PUBLIC_GA4_ID ?? "";
 const metaPixel = process.env.PUBLIC_META_PIXEL_ID ?? "";
 const linkedin = process.env.PUBLIC_LINKEDIN_PARTNER_ID ?? "";
-const hasPixels = Boolean(ga4 || metaPixel || linkedin);
+const tiktokPixel = process.env.PUBLIC_TIKTOK_PIXEL_ID ?? "";
+const hasPixels = Boolean(ga4 || metaPixel || linkedin || tiktokPixel);
 
 const whatsappHref = whatsappLink(`Hola Tekinsof, quiero información (${Astro.url.pathname})`);
 
@@ -193,7 +194,7 @@ const graph = {
     }
     {
       hasPixels && (
-        <script is:inline define:vars={{ ga4, metaPixel, linkedin }}>
+        <script is:inline define:vars={{ ga4, metaPixel, linkedin, tiktokPixel }}>
           function addScript(src) {
             var s = document.createElement("script");
             s.async = true;
@@ -222,6 +223,25 @@ const graph = {
               window._linkedin_partner_id = linkedin;
               window._linkedin_data_partner_ids = [linkedin];
               addScript("https://snap.licdn.com/li.lms-analytics/insight.min.js");
+            }
+            if (tiktokPixel) {
+              // TikTok's queue stub: calls made before events.js loads are replayed by it.
+              var ttq = (window.ttq = window.ttq || []);
+              ttq.methods = ["page", "track", "identify", "instances", "debug", "on", "off", "once", "ready", "alias", "group", "enableCookie", "disableCookie"];
+              ttq.setAndDefer = function (t, e) {
+                t[e] = function () { t.push([e].concat(Array.prototype.slice.call(arguments, 0))); };
+              };
+              for (var i = 0; i < ttq.methods.length; i++) ttq.setAndDefer(ttq, ttq.methods[i]);
+              var ttSrc = "https://analytics.tiktok.com/i18n/pixel/events.js";
+              ttq._i = ttq._i || {};
+              ttq._i[tiktokPixel] = [];
+              ttq._i[tiktokPixel]._u = ttSrc;
+              ttq._t = ttq._t || {};
+              ttq._t[tiktokPixel] = +new Date();
+              ttq._o = ttq._o || {};
+              ttq._o[tiktokPixel] = {};
+              addScript(ttSrc + "?sdkid=" + encodeURIComponent(tiktokPixel) + "&lib=ttq");
+              ttq.page();
             }
           }
           var banner = document.getElementById("consent-banner");

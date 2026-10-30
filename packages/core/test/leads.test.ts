@@ -77,6 +77,19 @@ describe("createPublicLead", () => {
     expect(events).toHaveLength(1);
   });
 
+  it("guarda los click ids de Google, Meta y TikTok", async () => {
+    const result = await createPublicLead(db, {
+      ...base,
+      email: "clicks@empresa.pe",
+      gclid: "gclid-1",
+      fbclid: "fbclid-1",
+      ttclid: "E.C.P.ttclid-1",
+    });
+    if (!result.ok || !result.data.leadId) throw new Error("lead");
+    const row = await leadRow(result.data.leadId);
+    expect(row).toMatchObject({ gclid: "gclid-1", fbclid: "fbclid-1", ttclid: "E.C.P.ttclid-1" });
+  });
+
   it("el honeypot no escribe nada", async () => {
     const result = await createPublicLead(db, { ...base, email: "bot@spam.pe", website: "x" });
     expect(result).toEqual({ ok: true, data: { leadId: null, deduplicated: false } });

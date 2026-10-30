@@ -60,6 +60,7 @@ export const publicLeadInput = z
     ),
     gclid: opt(text(500)),
     fbclid: opt(text(500)),
+    ttclid: opt(text(500)),
     referrer: opt(text(500)),
     turnstileToken: z.string().min(1, "Verificación requerida"),
     website: z.string().optional(),

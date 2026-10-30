@@ -1,4 +1,5 @@
 import { type SubmitEvent, useEffect, useId, useRef, useState } from "react";
+import { type Attribution, readAttribution, trackLeadConversion } from "../lib/attribution.ts";
 
 type FieldName = "fullName" | "email" | "phone" | "companyName" | "serviceInterest" | "message";
 
@@ -15,13 +16,6 @@ type Props = {
   whatsappHref: string;
 };
 
-type Attribution = {
-  utm: Partial<Record<"source" | "medium" | "campaign" | "term" | "content", string>>;
-  gclid?: string;
-  fbclid?: string;
-  referrer?: string;
-};
-
 type TurnstileApi = {
   render: (el: HTMLElement, opts: { sitekey: string; callback: (token: string) => void }) => string;
   reset: (id?: string) => void;
@@ -30,7 +24,6 @@ type TurnstileApi = {
 declare global {
   interface Window {
     turnstile?: TurnstileApi;
-    dataLayer?: unknown[];
   }
 }
 
@@ -51,32 +44,6 @@ const labels: Record<FieldName, string> = {
   serviceInterest: "Servicio de interés",
   message: "¿En qué te ayudamos?",
 };
-
-// First touch wins: the attribution of the visit that brought the prospect is kept for the session.
-function readAttribution(): Attribution {
-  try {
-    const stored = sessionStorage.getItem("tk_utm");
-    if (stored) return JSON.parse(stored) as Attribution;
-    const query = new URLSearchParams(window.location.search);
-    const pick = (key: string) => query.get(key) || undefined;
-    const attribution: Attribution = {
-      utm: {
-        source: pick("utm_source"),
-        medium: pick("utm_medium"),
-        campaign: pick("utm_campaign"),
-        term: pick("utm_term"),
-        content: pick("utm_content"),
-      },
-      gclid: pick("gclid"),
-      fbclid: pick("fbclid"),
-      referrer: document.referrer || undefined,
-    };
-    sessionStorage.setItem("tk_utm", JSON.stringify(attribution));
-    return attribution;
-  } catch {
-    return { utm: {} };
-  }
-}
 
 function loadTurnstile(): Promise<TurnstileApi> {
   return new Promise((resolve, reject) => {
@@ -141,7 +108,7 @@ export default function LeadForm({
     }
     setStatus("sending");
     setErrors({});
-    const { utm, gclid, fbclid, referrer } = attribution.current;
+    const { utm, gclid, fbclid, ttclid, referrer } = attribution.current;
     try {
       const res = await fetch(apiUrl, {
         method: "POST",
@@ -160,6 +127,7 @@ export default function LeadForm({
           utm,
           gclid,
           fbclid,
+          ttclid,
           referrer,
           turnstileToken: token,
           website: String(form.get("website") ?? ""),
@@ -167,7 +135,7 @@ export default function LeadForm({
       });
       if (res.status === 200 || res.status === 201) {
         setStatus("done");
-        window.dataLayer?.push({ event: "lead_submitted" });
+        trackLeadConversion();
         return;
       }
       if (res.status === 400) {

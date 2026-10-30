@@ -215,7 +215,7 @@
       "pnpm test"
     ],
     "checkpoint": "r2-step-09-landing-tracking",
-    "status": "todo"
+    "status": "done"
   },
   {
     "id": "r2-10",
