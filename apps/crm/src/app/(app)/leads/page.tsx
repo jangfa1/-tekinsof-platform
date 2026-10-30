@@ -1,5 +1,6 @@
 import { getDb } from "@tekinsof/core/db/client";
-import { type LeadFilters, leadStatuses, listLeads } from "@tekinsof/core/leads/leads";
+import { type LeadFilters, listLeads } from "@tekinsof/core/leads/leads";
+import { leadStatuses } from "@tekinsof/core/leads/schemas";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, Button, EmptyState, Pagination, Select, Table } from "@/components/ui";

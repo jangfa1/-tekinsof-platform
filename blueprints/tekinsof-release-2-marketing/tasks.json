@@ -218,6 +218,58 @@
     "status": "done"
   },
   {
+    "id": "r2-09a",
+    "title": "Lead scoring core",
+    "dependencies": [
+      "r2-09"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN a lead has every signal at its best value THE SYSTEM SHALL score it 100 with grade `A`, and the same lead without budget and company size SHALL drop to grade `B` with reasons that say \"no indicado\".",
+      "WHEN `handleLeadCreated` runs twice for the same lead THE SYSTEM SHALL store exactly one `lead_scores` row and copy its score and grade to the lead.",
+      "WHEN a seller completes the qualification of a lead THE SYSTEM SHALL add a `lead_scores` row and `leads.grade` SHALL reflect the latest one; another seller SHALL get `FORBIDDEN`.",
+      "WHEN an ad platform test lead is scored THE SYSTEM SHALL skip it.",
+      "WHEN an ad form answers \"Más de 200\" to a company size question THE SYSTEM SHALL store `company_size = '201+'`.",
+      "WHEN a `ventas` user calls `rescoreAll` THE SYSTEM SHALL return `FORBIDDEN`.",
+      "WHEN `leads.ts` and `LeadForm.tsx` are measured THE SYSTEM SHALL count at most 300 lines each."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/scoring.test.ts",
+      "test \"$(wc -l < packages/core/src/leads/leads.ts)\" -le 300",
+      "test \"$(wc -l < apps/web/src/components/LeadForm.tsx)\" -le 300",
+      "pnpm --filter @tekinsof/web build",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-09a-scoring-core",
+    "status": "done"
+  },
+  {
+    "id": "r2-09b",
+    "title": "Lead scoring UI",
+    "dependencies": [
+      "r2-09a"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN a user opens `/leads?grado=A` THE SYSTEM SHALL list only grade A leads and show each lead's grade in the inbox.",
+      "WHEN a user opens a scored lead THE SYSTEM SHALL show a \"Calificación\" card with the grade, the score and one line per signal with its points and explanation.",
+      "WHEN the owner saves company size, budget and company type on the lead THE SYSTEM SHALL show the new grade.",
+      "WHEN a `ventas` user opens `/configuracion/calificacion` THE SYSTEM SHALL deny access; Gerencia SHALL see the active rules and a \"Recalificar leads\" action.",
+      "WHEN the new screens are checked with axe THE SYSTEM SHALL report no violations."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/scoring.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-09b-scoring-ui",
+    "status": "todo"
+  },
+  {
     "id": "r2-10",
     "title": "Campaign spend",
     "dependencies": [

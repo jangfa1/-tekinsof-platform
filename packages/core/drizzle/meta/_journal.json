@@ -15,6 +15,13 @@
       "when": 1793337346440,
       "tag": "0001_colossal_arachne",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793390870213,
+      "tag": "0002_green_veda",
+      "breakpoints": true
     }
   ]
 }

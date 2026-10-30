@@ -4,6 +4,7 @@ import { normalizePhonePe } from "../crm/accounts.ts";
 import type { DbOrTx } from "../db/client.ts";
 import { adForms, campaigns, leads, outbox } from "../db/schema.ts";
 import { err, ok, type Result, validationError } from "../result.ts";
+import { qualificationFromAnswers } from "../scoring/normalize.ts";
 import { type InboundProvider, inboundProviders } from "./inbound.ts";
 
 // One entry point for every ad platform lead (Meta — Facebook and Instagram —, TikTok, Google).
@@ -139,6 +140,7 @@ export async function ingestExternalLead(db: DbOrTx, input: ExternalLead): Promi
           message: lead.message,
           gclid: lead.gclid,
           rawAnswers,
+          ...qualificationFromAnswers(lead.rawAnswers),
           isTest: lead.isTest,
           consentAt: lead.submittedAt,
           consentVersion: `${lead.provider}-form`,

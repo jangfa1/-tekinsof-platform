@@ -8,6 +8,7 @@ import {
 } from "@tekinsof/core/cms/landings";
 import { company } from "@tekinsof/core/company";
 import { getDb } from "@tekinsof/core/db/client";
+import { qualifierChoices } from "@tekinsof/core/scoring/options";
 
 // PUBLIC_* values shared by every page that renders the lead form or WhatsApp links.
 export const site = {
@@ -15,6 +16,8 @@ export const site = {
   siteKey: process.env.PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA",
   bookingsUrl: process.env.PUBLIC_BOOKINGS_URL || "#contacto",
   consentVersion: "2026-10-30",
+  // Optional scoring questions (company size, budget, company type) shown by the lead form.
+  qualifiers: qualifierChoices,
 };
 
 // Contact data is fixed (packages/core/src/company.ts), not configurable per environment.

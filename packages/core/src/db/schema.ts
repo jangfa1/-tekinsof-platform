@@ -284,6 +284,13 @@ export const leads = pgTable(
     adsetId: text(),
     adPlatform: text(),
     rawAnswers: jsonb().notNull().default({}),
+    // Qualification answers and the latest grade, denormalized from lead_scores to filter the inbox.
+    companySize: text(),
+    budgetRange: text(),
+    companyType: text(),
+    score: integer(),
+    grade: text(),
+    scoredAt: timestamp({ withTimezone: true }),
     isTest: boolean().notNull().default(false),
     consentAt: timestamp({ withTimezone: true }),
     consentVersion: text(),
@@ -327,6 +334,63 @@ export const leads = pgTable(
       "ck_leads_ad_platform",
       sql`${t.adPlatform} is null or ${t.adPlatform} in ('facebook','instagram','tiktok','google')`,
     ),
+    index("idx_leads_grade").on(t.grade, t.createdAt),
+    check(
+      "ck_leads_company_size",
+      sql`${t.companySize} is null or ${t.companySize} in ('1-10','11-50','51-200','201+')`,
+    ),
+    check(
+      "ck_leads_budget_range",
+      sql`${t.budgetRange} is null or ${t.budgetRange} in ('hasta-5k','5k-20k','20k-50k','mas-50k')`,
+    ),
+    check(
+      "ck_leads_company_type",
+      sql`${t.companyType} is null or ${t.companyType} in ('privada','publica','ong','independiente')`,
+    ),
+    check("ck_leads_grade", sql`${t.grade} is null or ${t.grade} in ('A','B','C','D')`),
+    check("ck_leads_score", sql`${t.score} is null or ${t.score} between 0 and 100`),
+  ],
+);
+
+// ─── Lead scoring (rule-based; design.md §4.5 without the AI layer) ──────────────────────────
+
+export const scoringModels = pgTable(
+  "scoring_models",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+    version: integer().notNull().unique(),
+    rules: jsonb().notNull(),
+    thresholds: jsonb().notNull(),
+    isActive: boolean().notNull().default(false),
+    createdBy: text().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("uq_scoring_models_active").on(t.isActive).where(sql`${t.isActive}`)],
+);
+
+export const leadScores = pgTable(
+  "lead_scores",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+    leadId: uuid()
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    scoringModelVersion: integer().notNull(),
+    score: integer().notNull(),
+    grade: text().notNull(),
+    reasons: jsonb().notNull(),
+    inputs: jsonb().notNull(),
+    scoredAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("idx_lead_scores_lead").on(t.leadId, t.scoredAt),
+    check("ck_lead_scores_grade", sql`${t.grade} in ('A','B','C','D')`),
+    check("ck_lead_scores_score", sql`${t.score} between 0 and 100`),
   ],
 );
 
