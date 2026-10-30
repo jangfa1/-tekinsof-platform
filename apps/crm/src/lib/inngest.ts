@@ -8,6 +8,7 @@ import {
   slaSweep,
   triggerSiteDeploy,
 } from "@tekinsof/core/automation/sweeps";
+import { processInbound } from "@tekinsof/core/capture/process-inbound";
 import { getDb } from "@tekinsof/core/db/client";
 import { createMailer } from "@tekinsof/core/integrations/graph";
 import { Inngest } from "inngest";
@@ -90,6 +91,28 @@ const siteDeploy = inngest.createFunction(
     ),
 );
 
+const captureDeps = () => {
+  const env = getEnv();
+  return {
+    meta: { fetch, graphVersion: env.META_GRAPH_VERSION },
+    encryptionKey: Buffer.from(env.INTEGRATIONS_ENCRYPTION_KEY, "base64"),
+    now: () => new Date(),
+  };
+};
+
+// Webhooks from ad platforms (R2). An error Result is transient by contract, so throwing hands the
+// retry to Inngest; permanent problems come back as ok and are recorded on the inbound event.
+const inboundReceived = inngest.createFunction(
+  { id: "process-inbound", triggers: [{ event: "inbound/received" }], retries: 4 },
+  async ({ event, step }) =>
+    step.run("process-inbound", async () => {
+      const inboundEventId = (event.data as { inboundEventId: string }).inboundEventId;
+      const result = await processInbound(getDb(), captureDeps(), inboundEventId);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.data;
+    }),
+);
+
 const approvalRequested = inngest.createFunction(
   { id: "quote-approval-requested", triggers: [{ event: "quote/approval.requested" }] },
   async ({ event, step }) =>
@@ -108,4 +131,5 @@ export const functions = [
   ...(getEnv().MAIL_DRIVER === "log" ? [] : [entra]),
   siteDeploy,
   approvalRequested,
+  inboundReceived,
 ];

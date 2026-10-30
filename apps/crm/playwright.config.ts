@@ -22,6 +22,10 @@ const env: Record<string, string> = {
   STORAGE_DRIVER: "local",
   INNGEST_DEV: "1",
   CRM_BASE_URL: "http://localhost:3000",
+  // Webhook secrets the R2 specs sign with (e2e/webhooks-*.spec.ts).
+  META_APP_SECRET: "e2e-meta-app-secret",
+  META_VERIFY_TOKEN: "e2e-meta-verify-token",
+  TIKTOK_WEBHOOK_SECRET: "e2e-tiktok-webhook-secret",
 };
 
 export default defineConfig({
