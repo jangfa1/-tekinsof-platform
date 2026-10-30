@@ -1,41 +1,55 @@
 ---
-// Testimonials (08) and clients (09). Both are placeholders until Tekinsof provides verified,
-// authorised content; see lib/home-placeholders.ts.
-import { pendingClientSlots, pendingTestimonials } from "../../lib/home-placeholders.ts";
+// Testimonial (08) and client logos (09); content and authorisation notes in lib/home-cases.ts.
+import { clientLogos, testimonial } from "../../lib/home-cases.ts";
 import Eyebrow from "../ui/Eyebrow.astro";
-import Icon from "../ui/Icon.astro";
-import PendingBadge from "../ui/PendingBadge.astro";
 
-const testimonial = pendingTestimonials[0];
+const initials = testimonial.name
+  .split(" ")
+  .map((word) => word[0])
+  .join("");
 ---
 
-<section id="testimonios" class="bg-surface-accent py-24 md:py-32">
-  <div class="mx-auto max-w-[1200px] px-4">
-    {
-      testimonial && (
-        <figure data-placeholder class="reveal mx-auto max-w-4xl text-center">
-          <Eyebrow index="08" indexClass="text-fg" class="justify-center text-fg-muted">
-            Testimonios
-          </Eyebrow>
-          <div class="mt-8">
-            <PendingBadge />
-          </div>
-          <blockquote class="mt-8 text-balance font-display text-2xl leading-snug font-semibold tracking-tight md:text-4xl">
-            <span aria-hidden="true" class="font-display text-6xl leading-none text-fg/20">“</span>
-            {testimonial.quote}
-          </blockquote>
-          <figcaption class="mt-10 flex items-center justify-center gap-4">
-            <span class="inline-flex size-12 items-center justify-center rounded-full border border-dashed border-fg/30 bg-background text-fg-muted">
-              <Icon name="users" class="size-5" />
-            </span>
-            <span class="text-left">
-              <span class="block font-semibold">{testimonial.name}</span>
-              <span class="block text-sm text-fg-muted">{testimonial.role}</span>
-            </span>
-          </figcaption>
-        </figure>
-      )
-    }
+<section id="testimonios" class="relative overflow-hidden bg-surface-accent py-24 md:py-32">
+  <div aria-hidden="true" class="bg-dots-light pointer-events-none absolute inset-0"></div>
+  <div class="relative mx-auto grid max-w-[1200px] gap-12 px-4 lg:grid-cols-[1fr_1.15fr] lg:gap-16">
+    <div class="reveal flex flex-col">
+      <Eyebrow index="08" indexClass="text-fg" class="text-fg-muted">Testimonios</Eyebrow>
+      <p class="mt-8 text-balance font-display text-3xl leading-tight font-bold tracking-tight md:text-5xl">
+        <span aria-hidden="true" class="block font-display text-7xl leading-none text-fg/25">“</span>
+        {testimonial.highlight}
+      </p>
+      <ul class="mt-8 flex flex-wrap gap-2">
+        {
+          testimonial.tags.map((tag) => (
+            <li class="rounded-full border border-fg/10 bg-background px-3 py-1 text-xs font-medium">{tag}</li>
+          ))
+        }
+      </ul>
+    </div>
+
+    <figure class="reveal-scale rounded-[var(--radius-card)] border border-fg/10 bg-background p-6 shadow-dialog md:p-10">
+      <img
+        src={testimonial.logo.src}
+        alt={`Logo de ${testimonial.company}`}
+        width={testimonial.logo.width}
+        height={testimonial.logo.height}
+        loading="lazy"
+        decoding="async"
+        class="h-14 w-auto rounded-[var(--radius-control)]"
+      />
+      <blockquote class="mt-8 grid gap-4 text-fg-muted md:text-lg">
+        {testimonial.paragraphs.map((p) => <p>{p}</p>)}
+      </blockquote>
+      <figcaption class="mt-8 flex items-center gap-4 border-t border-border pt-6">
+        <span class="inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-fg font-display font-bold text-background">
+          {initials}
+        </span>
+        <span>
+          <span class="block font-semibold">{testimonial.name}</span>
+          <span class="block text-sm text-fg-muted">{testimonial.role} · {testimonial.company}</span>
+        </span>
+      </figcaption>
+    </figure>
   </div>
 </section>
 
@@ -44,13 +58,26 @@ const testimonial = pendingTestimonials[0];
     <div class="reveal flex flex-col items-center gap-4 text-center">
       <Eyebrow index="09">Clientes</Eyebrow>
       <h2 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Empresas que confían en Tekinsof</h2>
-      <PendingBadge label="Logos pendientes de autorización" />
     </div>
-    <ul data-placeholder class="mt-12 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+    <ul class="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
       {
-        Array.from({ length: pendingClientSlots }, (_, i) => (
-          <li class:list={["reveal flex h-24 items-center justify-center rounded-[var(--radius-card)] border border-dashed border-border", i % 3 === 1 && "reveal-2", i % 3 === 2 && "reveal-3"]}>
-            <span class="eyebrow text-fg-muted">Espacio reservado</span>
+        clientLogos.map((logo, i) => (
+          <li
+            class:list={[
+              "reveal card-premium flex h-28 items-center justify-center rounded-[var(--radius-card)] border border-border bg-background px-6",
+              i % 3 === 1 && "reveal-2",
+              i % 3 === 2 && "reveal-3",
+            ]}
+          >
+            <img
+              src={logo.src}
+              alt={logo.name}
+              width={logo.width}
+              height={logo.height}
+              loading="lazy"
+              decoding="async"
+              class="max-h-14 w-auto max-w-full object-contain"
+            />
           </li>
         ))
       }

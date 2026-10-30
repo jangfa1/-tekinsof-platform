@@ -22,19 +22,22 @@ const { whatsappHref } = Astro.props;
     <div class="reveal max-w-2xl">
       <p class="eyebrow text-fg-muted">Empecemos</p>
       <h2 class="mt-6 text-balance font-display text-4xl leading-[1.05] font-bold tracking-tight md:text-6xl">
-        Tu próximo proyecto empieza con una conversación.
+        ¿Listo para transformar tu empresa?
       </h2>
       <p class="mt-6 max-w-xl text-lg text-fg-muted">
-        Cuéntanos qué necesitas. Un especialista revisa tu caso y te responde en menos de 4 horas
-        laborables.
+        Conversemos sobre cómo Tekinsof puede ayudarte a automatizar procesos, integrar sistemas y
+        generar más oportunidades de negocio.
       </p>
       <div class="mt-10 flex flex-wrap gap-4">
-        <Button href="#contacto" size="lg" icon="arrow-right">Cotiza tu proyecto</Button>
+        <Button href="#contacto" size="lg" icon="arrow-right">Solicitar cotización</Button>
         <Button href={whatsappHref} variant="outline" size="lg">
           <Icon name="message-circle" class="size-5 text-success" />
-          WhatsApp
+          Hablar por WhatsApp
         </Button>
       </div>
+      <p class="mt-8 flex items-center gap-2 text-sm text-fg-muted">
+        <Icon name="clock" class="size-4" /> Respondemos en menos de 4 horas laborables.
+      </p>
     </div>
   </div>
 </section>

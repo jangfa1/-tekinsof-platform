@@ -41,6 +41,14 @@
       }
     }
 
+    /* Always-vertical track (case-study timelines). */
+    .track-fill-y {
+      animation: track-y linear both;
+      animation-timeline: view();
+      animation-range: entry 30% cover 55%;
+      transform-origin: center top;
+    }
+
     /* Mobile CTA bar slides in once the hero is behind. */
     .after-hero {
       animation: slide-up linear both;

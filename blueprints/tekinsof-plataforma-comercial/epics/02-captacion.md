@@ -364,11 +364,11 @@ con los defaults locales de `.env.example`, y se pasan a la isla como props):
   (`og:title`, `og:description`, `og:url`, `og:locale` = `es_PE`), `robots` `noindex` cuando
   corresponde, y un `<script type="application/ld+json">` con `@type: "Organization"`, `name`
   "Tekinsof Consulting", `url` "https://tekinsof.com", `email` "info@tekinsof.com", `telephone`
-  "+51981053022", `address` (`streetAddress` "Av. La Molina 145", `addressLocality` "Ate",
+  "+51959926642", `address` (`streetAddress` "Av. Separadora Industrial Nro. 3144, Urb. Mayorazgo Etapa Tres", `addressLocality` "Lima",
   `addressRegion` "Lima", `addressCountry` "PE"). Cabecera: logo textual, enlaces "Servicios"
   (`/#servicios`), "Contacto" (`/#contacto`), botón `accent` "Agenda una reunión" a
   `PUBLIC_BOOKINGS_URL`. Pie con dirección, correo, teléfono y enlace "Política de privacidad"
-  (`/privacidad`). Botón flotante de WhatsApp: `<a href="https://wa.me/<PUBLIC_WHATSAPP_NUMBER>?text=…">`
+  (`/privacidad`). Botón flotante de WhatsApp: `<a href="https://wa.me/51959926642?text=…">` (número fijo en `packages/core/src/company.ts`)
   con `aria-label="Escríbenos por WhatsApp"`; el texto es "Hola Tekinsof, quiero información
   (<ruta>)" y un script inline de 10 líneas le agrega ` [<utm_campaign>]` si `sessionStorage.tk_utm`
   lo tiene. Banner de consentimiento **solo si** hay algún ID de píxel (`PUBLIC_GA4_ID`,
@@ -396,7 +396,7 @@ con los defaults locales de `.env.example`, y se pasan a la isla como props):
   Azure; respuesta en menos de 4 horas laborables); `#contacto` con `LeadForm` (servicios = la misma
   lista estática con slugs kebab-case), dirección, correo, WhatsApp y enlace a Bookings.
 - `src/pages/privacidad.astro` — Política de privacidad (Ley N.° 29733 y su reglamento): responsable
-  (Tekinsof Consulting, Av. La Molina 145, Ate, Lima), datos que se recogen (los del formulario y
+  (Tekinsof Consulting, Av. Separadora Industrial Nro. 3144, Urb. Mayorazgo Etapa Tres, Lima), datos que se recogen (los del formulario y
   los de WhatsApp), finalidad (atender la solicitud y comunicaciones comerciales relacionadas),
   conservación (24 meses desde el último contacto), destinatarios (proveedores de hosting y correo
   como encargados), derechos ARCO y cómo ejercerlos (info@tekinsof.com), versión "2026-10". El texto
@@ -415,7 +415,7 @@ Copied from this task's `acceptance` array in `tasks.json` — identical after t
 command below, on this machine, during the build.
 
 1. **WHEN** `pnpm --filter @tekinsof/web build` runs **THE SYSTEM SHALL** exit 0 and emit `dist/index.html` and `dist/privacidad.html`.
-2. **WHEN** `dist/index.html` is inspected **THE SYSTEM SHALL** contain an `application/ld+json` block, a `wa.me/51981053022` link and a server-rendered form input named `fullName`.
+2. **WHEN** `dist/index.html` is inspected **THE SYSTEM SHALL** contain an `application/ld+json` block, a `wa.me/51959926642` link and a server-rendered form input named `fullName`.
 3. **WHEN** `dist/index.html` is inspected **THE SYSTEM SHALL** contain no request to `fonts.googleapis.com`.
 4. **WHEN** `dist/privacidad.html` is inspected **THE SYSTEM SHALL** contain the text `29733`.
 
@@ -427,7 +427,7 @@ pnpm typecheck
 pnpm lint
 pnpm --filter @tekinsof/web build
 grep -q "application/ld+json" apps/web/dist/index.html
-grep -q "wa.me/51981053022" apps/web/dist/index.html
+grep -q "wa.me/51959926642" apps/web/dist/index.html
 grep -q 'name="fullName"' apps/web/dist/index.html
 grep -q "29733" apps/web/dist/privacidad.html
 status=0; grep -q "fonts.googleapis.com" apps/web/dist/index.html || status=$?; test "$status" -eq 1
@@ -476,7 +476,7 @@ a running order
   4. Acuse al prospecto solo si tiene email y `source` ∈ web_form, landing: **desde el buzón del
      dueño** (si el dueño es `ventas`; si es el respaldo `gerencia`, desde `systemSender`), asunto
      "Recibimos tu consulta — Tekinsof", firmado con el nombre del dueño, con el WhatsApp
-     +51 981 053 022; `replyTo` = email del dueño.
+     +51 959 926 642; `replyTo` = email del dueño.
   5. Un fallo de correo **no** deshace la asignación: devuelve `notified`/`acknowledged` en false.
 - `packages/core/test/lead-created.test.ts` — con mailer `log`: dos `ventas` (A sin
   `last_assigned_at`, B con ayer) y un `gerencia`; tres leads consecutivos quedan para A, B, A; volver

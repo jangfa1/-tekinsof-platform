@@ -1,49 +1,67 @@
 ---
-import { pendingCases } from "../../lib/home-placeholders.ts";
-import Icon from "../ui/Icon.astro";
-import PendingBadge from "../ui/PendingBadge.astro";
+import { caseStudies } from "../../lib/home-cases.ts";
 import SectionHeading from "../ui/SectionHeading.astro";
+import CaseStory from "./CaseStory.astro";
+
+interface Props {
+  /** Slugs of the published services, so a story links to its service only when that page exists. */
+  publishedSlugs: string[];
+}
+
+const { publishedSlugs } = Astro.props;
+const serviceHref = (slug: string) =>
+  publishedSlugs.includes(slug) ? `/servicios/${slug}` : undefined;
 ---
 
-<section id="casos" class="pt-24 md:pt-32">
-  <div class="mx-auto max-w-[1200px] px-4">
+<section id="casos" class="relative pt-24 md:pt-32">
+  <div aria-hidden="true" class="bg-dots-light pointer-events-none absolute inset-x-0 top-0 h-96"></div>
+  <div class="relative mx-auto max-w-[1200px] px-4">
     <SectionHeading
       index="06"
       eyebrow="Casos de éxito"
       title="Proyectos que cambiaron la forma de trabajar de nuestros clientes."
+      lead="Empresas que integraron sus sistemas, automatizaron su gestión comercial y convirtieron el marketing digital en un canal medible de nuevos clientes."
     />
-    <ul class="mt-16 grid gap-6 md:grid-cols-3">
+
+    <!-- Impact strip: the headline result of each story, counted up when it scrolls into view. -->
+    <ul class="mt-16 grid gap-4 md:grid-cols-3">
       {
-        pendingCases.map((item, i) => (
-          <li
-            data-placeholder
-            class:list={["reveal flex flex-col rounded-[var(--radius-card)] border border-dashed border-border bg-surface p-6", i === 1 && "reveal-2", i === 2 && "reveal-3"]}
-          >
-            <PendingBadge />
-            <p class="eyebrow mt-8 text-fg-muted">{item.sector}</p>
-            <h3 class="mt-3 font-display text-xl font-semibold">{item.title}</h3>
-            <dl class="mt-6 grid gap-4 text-sm">
-              <div>
-                <dt class="font-semibold">Reto</dt>
-                <dd class="mt-1 text-fg-muted">{item.challenge}</dd>
-              </div>
-              <div>
-                <dt class="font-semibold">Solución</dt>
-                <dd class="mt-1 text-fg-muted">{item.solution}</dd>
-              </div>
-            </dl>
-            <div class="mt-auto pt-8">
-              <div class="flex items-end justify-between border-t border-border pt-6">
-                <p>
-                  <span class="block font-display text-4xl font-bold text-fg-muted/50">—</span>
-                  <span class="mt-1 block text-xs text-fg-muted">{item.metricLabel}</span>
-                </p>
-                <Icon name="trending-up" class="size-8 text-border" />
-              </div>
-            </div>
+        caseStudies.map((item, i) => (
+          <li class:list={["reveal", i === 1 && "reveal-2", i === 2 && "reveal-3"]}>
+            <a
+              href={`#caso-${item.id}`}
+              class="card-premium flex h-full flex-col rounded-[var(--radius-card)] border border-border bg-surface p-6"
+            >
+              <span class="flex h-10 items-center">
+                <img
+                  src={item.logo.src}
+                  alt={item.company}
+                  width={item.logo.width}
+                  height={item.logo.height}
+                  loading="lazy"
+                  decoding="async"
+                  class="h-full w-auto max-w-36 object-contain"
+                />
+              </span>
+              <span class="mt-8 block font-display text-5xl font-bold tracking-tight tabular-nums">
+                <span data-count={item.metric.value}>{item.metric.value}</span>{item.metric.suffix}
+              </span>
+              <span class="mt-2 block text-sm text-fg-muted">{item.metric.label}</span>
+              <span class="mt-auto pt-6 text-sm font-semibold">{item.title}</span>
+            </a>
           </li>
         ))
       }
     </ul>
+
+    <div class="mt-12 grid gap-8 md:mt-16">
+      {
+        caseStudies.map((item, i) => (
+          <div id={`caso-${item.id}`} class="scroll-mt-24">
+            <CaseStory item={item} reverse={i % 2 === 1} serviceHref={serviceHref(item.serviceSlug)} />
+          </div>
+        ))
+      }
+    </div>
   </div>
 </section>

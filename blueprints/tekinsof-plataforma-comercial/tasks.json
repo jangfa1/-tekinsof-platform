@@ -294,7 +294,7 @@
     "priority": "p0",
     "acceptance": [
       "WHEN `pnpm --filter @tekinsof/web build` runs THE SYSTEM SHALL exit 0 and emit `dist/index.html` and `dist/privacidad.html`.",
-      "WHEN `dist/index.html` is inspected THE SYSTEM SHALL contain an `application/ld+json` block, a `wa.me/51981053022` link and a server-rendered form input named `fullName`.",
+      "WHEN `dist/index.html` is inspected THE SYSTEM SHALL contain an `application/ld+json` block, a `wa.me/51959926642` link and a server-rendered form input named `fullName`.",
       "WHEN `dist/index.html` is inspected THE SYSTEM SHALL contain no request to `fonts.googleapis.com`.",
       "WHEN `dist/privacidad.html` is inspected THE SYSTEM SHALL contain the text `29733`."
     ],
@@ -303,7 +303,7 @@
       "pnpm lint",
       "pnpm --filter @tekinsof/web build",
       "grep -q \"application/ld+json\" apps/web/dist/index.html",
-      "grep -q \"wa.me/51981053022\" apps/web/dist/index.html",
+      "grep -q \"wa.me/51959926642\" apps/web/dist/index.html",
       "grep -q 'name=\"fullName\"' apps/web/dist/index.html",
       "grep -q \"29733\" apps/web/dist/privacidad.html",
       "status=0; grep -q \"fonts.googleapis.com\" apps/web/dist/index.html || status=$?; test \"$status\" -eq 1"

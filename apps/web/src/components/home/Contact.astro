@@ -1,5 +1,5 @@
 ---
-import { site } from "../../lib/content.ts";
+import { company, site } from "../../lib/content.ts";
 import LeadForm from "../LeadForm.tsx";
 import Eyebrow from "../ui/Eyebrow.astro";
 import Icon from "../ui/Icon.astro";
@@ -11,19 +11,23 @@ interface Props {
 
 const { whatsappHref, services } = Astro.props;
 
+const promises = [
+  { icon: "clock", text: "Respondemos en menos de 4 horas laborables.", href: undefined },
+  { icon: "calendar", text: "Solicita una reunión sin compromiso.", href: site.bookingsUrl },
+] as const;
 const steps = [
   { title: "Nos escribes", text: "Por este formulario o por WhatsApp." },
   {
     title: "Te asignamos un especialista",
-    text: "Recibe tu consulta y te contacta en menos de 4 horas laborables.",
+    text: "Revisa tu consulta y te contacta en menos de 4 horas laborables.",
   },
   { title: "Recibes una propuesta", text: "Con alcance, plazos y una cotización clara." },
 ];
 const channels = [
-  { icon: "message-circle", label: "WhatsApp +51 981 053 022", href: whatsappHref },
-  { icon: "mail", label: "info@tekinsof.com", href: "mailto:info@tekinsof.com" },
-  { icon: "calendar", label: "Agenda una reunión", href: site.bookingsUrl },
-  { icon: "map-pin", label: "Av. La Molina 145, Ate, Lima", href: undefined },
+  { icon: "map-pin", label: "Dirección", value: company.address, href: company.mapsUrl },
+  { icon: "phone", label: "WhatsApp y teléfono", value: company.phone, href: whatsappHref },
+  { icon: "clock", label: "Atención", value: company.hours, href: undefined },
+  { icon: "mail", label: "Correo", value: company.email, href: `mailto:${company.email}` },
 ] as const;
 ---
 
@@ -34,7 +38,27 @@ const channels = [
       <h2 class="mt-6 text-balance font-display text-3xl font-bold tracking-tight md:text-5xl md:leading-[1.05]">
         Conversemos sobre tu proyecto
       </h2>
-      <p class="mt-6 text-lg text-fg-muted">Déjanos tus datos y te explicamos cómo podemos ayudarte.</p>
+      <p class="mt-6 text-lg text-fg-muted">
+        Transforma tus procesos con tecnología, automatización e inteligencia artificial.
+      </p>
+      <ul class="mt-6 flex flex-wrap gap-2">
+        {
+          promises.map((p) => {
+            const Tag = p.href ? "a" : "span";
+            return (
+            <li>
+              <Tag
+                href={p.href}
+                class:list={["inline-flex min-h-9 items-center gap-2 rounded-full border border-border bg-background px-3 text-sm font-medium", p.href && "hover:border-fg/30"]}
+              >
+                <Icon name={p.icon} class="size-4 text-success" />
+                {p.text}
+              </Tag>
+            </li>
+            );
+          })
+        }
+      </ul>
 
       <ol class="mt-10 grid gap-6">
         {
@@ -52,27 +76,67 @@ const channels = [
         }
       </ol>
 
-      <address class="mt-10 grid gap-3 border-t border-border pt-8 not-italic sm:grid-cols-2">
+      <address class="mt-10 grid gap-3 not-italic sm:grid-cols-2">
         {
-          channels.map((c) =>
-            c.href ? (
-              <a href={c.href} class="flex min-h-11 items-center gap-3 text-sm font-medium hover:text-link">
-                <Icon name={c.icon} class="size-5 text-fg-muted" />
-                {c.label}
+          channels.map((c) => {
+            const body = (
+              <>
+                <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-[var(--radius-control)] border border-border bg-surface">
+                  <Icon name={c.icon} class="size-5" />
+                </span>
+                <span>
+                  <span class="eyebrow block text-fg-muted">{c.label}</span>
+                  <span class="mt-1 block text-sm font-medium">{c.value}</span>
+                </span>
+              </>
+            );
+            const box = "flex h-full gap-3 rounded-[var(--radius-card)] border border-border bg-background p-4";
+            return c.href ? (
+              <a
+                href={c.href}
+                {...(c.icon === "map-pin" ? { target: "_blank", rel: "noopener" } : {})}
+                class:list={[box, "card-premium"]}
+              >
+                {body}
               </a>
             ) : (
-              <p class="flex min-h-11 items-center gap-3 text-sm font-medium">
-                <Icon name={c.icon} class="size-5 text-fg-muted" />
-                {c.label}
-              </p>
-            ),
-          )
+              <p class={box}>{body}</p>
+            );
+          })
         }
       </address>
+
+      <!-- Map card: links out to Google Maps instead of embedding it, so no third-party cookies load
+           before consent (the same rule as the ad pixels). -->
+      <a
+        href={company.mapsUrl}
+        target="_blank"
+        rel="noopener"
+        class="card-premium group relative mt-3 block h-40 overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface-accent"
+      >
+        <span aria-hidden="true" class="bg-dots-light absolute inset-0"></span>
+        <span aria-hidden="true" class="absolute inset-x-0 top-1/2 h-3 -rotate-6 bg-background/80"></span>
+        <span aria-hidden="true" class="absolute inset-y-0 left-1/3 w-2 rotate-12 bg-background/70"></span>
+        <span aria-hidden="true" class="absolute top-1/2 left-1/3 -translate-x-1/2 -translate-y-full">
+          <span class="float inline-flex size-10 items-center justify-center rounded-full bg-fg text-background shadow-float">
+            <Icon name="map-pin" class="size-5" />
+          </span>
+        </span>
+        <span class="absolute right-4 bottom-4 inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-control)] bg-background px-4 text-sm font-semibold shadow-dialog">
+          Ver en Google Maps <Icon name="arrow-up-right" class="size-4" />
+        </span>
+      </a>
     </div>
 
-    <div class="reveal-scale rounded-[var(--radius-card)] border border-border bg-background p-6 shadow-dialog md:p-10">
-      <LeadForm client:visible apiUrl={site.apiUrl} siteKey={site.siteKey} services={services} consentVersion={site.consentVersion} />
+    <div class="reveal-scale self-start rounded-[var(--radius-card)] border border-border bg-background p-6 shadow-dialog md:p-10">
+      <LeadForm
+        client:visible
+        apiUrl={site.apiUrl}
+        siteKey={site.siteKey}
+        services={services}
+        consentVersion={site.consentVersion}
+        whatsappHref={whatsappHref}
+      />
     </div>
   </div>
 </section>

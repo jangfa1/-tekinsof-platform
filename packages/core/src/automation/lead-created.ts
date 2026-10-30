@@ -1,5 +1,6 @@
 import { and, asc, eq, sql } from "drizzle-orm";
 import { writeAudit } from "../audit/audit.ts";
+import { company } from "../company.ts";
 import type { DbOrTx } from "../db/client.ts";
 import { campaigns, leads, users } from "../db/schema.ts";
 import { escapeHtml, type Mailer } from "../integrations/graph.ts";
@@ -120,7 +121,7 @@ export async function handleLeadCreated(
       html: [
         `<p>Hola ${escapeHtml(lead.fullName)}:</p>`,
         "<p>Gracias por escribirnos. Recibimos tu consulta y te contactaremos en menos de 4 horas laborables.</p>",
-        "<p>Si prefieres, escríbenos por WhatsApp al +51 981 053 022.</p>",
+        `<p>Si prefieres, escríbenos por WhatsApp al ${company.phone}.</p>`,
         `<p>Saludos,<br>${escapeHtml(owner.name)}<br>Tekinsof Consulting</p>`,
       ].join(""),
     });

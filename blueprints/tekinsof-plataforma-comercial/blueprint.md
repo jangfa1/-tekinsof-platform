@@ -322,7 +322,7 @@ fila que lo origina; un barrido por cron reintenta los pendientes.
 `website`, `phone`, `address`, `owner_id`, `created_by`, `deleted_at`.
 
 **contacts** — `company_id` → companies (set null), `full_name` not null, `email` (único sin
-mayúsculas entre no borrados), `phone` (E.164, p. ej. `+51981053022`), `job_title`, `owner_id`,
+mayúsculas entre no borrados), `phone` (E.164, p. ej. `+51959926642`), `job_title`, `owner_id`,
 `marketing_consent_at`, `deleted_at`.
 
 **campaigns** — `name`, `slug` unique, `channel` ∈ `google_ads, meta_ads, linkedin_ads,
@@ -2563,11 +2563,11 @@ con los defaults locales de `.env.example`, y se pasan a la isla como props):
   (`og:title`, `og:description`, `og:url`, `og:locale` = `es_PE`), `robots` `noindex` cuando
   corresponde, y un `<script type="application/ld+json">` con `@type: "Organization"`, `name`
   "Tekinsof Consulting", `url` "https://tekinsof.com", `email` "info@tekinsof.com", `telephone`
-  "+51981053022", `address` (`streetAddress` "Av. La Molina 145", `addressLocality` "Ate",
+  "+51959926642", `address` (`streetAddress` "Av. Separadora Industrial Nro. 3144, Urb. Mayorazgo Etapa Tres", `addressLocality` "Lima",
   `addressRegion` "Lima", `addressCountry` "PE"). Cabecera: logo textual, enlaces "Servicios"
   (`/#servicios`), "Contacto" (`/#contacto`), botón `accent` "Agenda una reunión" a
   `PUBLIC_BOOKINGS_URL`. Pie con dirección, correo, teléfono y enlace "Política de privacidad"
-  (`/privacidad`). Botón flotante de WhatsApp: `<a href="https://wa.me/<PUBLIC_WHATSAPP_NUMBER>?text=…">`
+  (`/privacidad`). Botón flotante de WhatsApp: `<a href="https://wa.me/51959926642?text=…">` (número fijo en `packages/core/src/company.ts`)
   con `aria-label="Escríbenos por WhatsApp"`; el texto es "Hola Tekinsof, quiero información
   (<ruta>)" y un script inline de 10 líneas le agrega ` [<utm_campaign>]` si `sessionStorage.tk_utm`
   lo tiene. Banner de consentimiento **solo si** hay algún ID de píxel (`PUBLIC_GA4_ID`,
@@ -2595,7 +2595,7 @@ con los defaults locales de `.env.example`, y se pasan a la isla como props):
   Azure; respuesta en menos de 4 horas laborables); `#contacto` con `LeadForm` (servicios = la misma
   lista estática con slugs kebab-case), dirección, correo, WhatsApp y enlace a Bookings.
 - `src/pages/privacidad.astro` — Política de privacidad (Ley N.° 29733 y su reglamento): responsable
-  (Tekinsof Consulting, Av. La Molina 145, Ate, Lima), datos que se recogen (los del formulario y
+  (Tekinsof Consulting, Av. Separadora Industrial Nro. 3144, Urb. Mayorazgo Etapa Tres, Lima), datos que se recogen (los del formulario y
   los de WhatsApp), finalidad (atender la solicitud y comunicaciones comerciales relacionadas),
   conservación (24 meses desde el último contacto), destinatarios (proveedores de hosting y correo
   como encargados), derechos ARCO y cómo ejercerlos (info@tekinsof.com), versión "2026-10". El texto
@@ -2603,7 +2603,7 @@ con los defaults locales de `.env.example`, y se pasan a la isla como props):
 
 **Done when**
 - [ ] WHEN `pnpm --filter @tekinsof/web build` runs THE SYSTEM SHALL exit 0 and emit `dist/index.html` and `dist/privacidad.html`.
-- [ ] WHEN `dist/index.html` is inspected THE SYSTEM SHALL contain an `application/ld+json` block, a `wa.me/51981053022` link and a server-rendered form input named `fullName`.
+- [ ] WHEN `dist/index.html` is inspected THE SYSTEM SHALL contain an `application/ld+json` block, a `wa.me/51959926642` link and a server-rendered form input named `fullName`.
 - [ ] WHEN `dist/index.html` is inspected THE SYSTEM SHALL contain no request to `fonts.googleapis.com`.
 - [ ] WHEN `dist/privacidad.html` is inspected THE SYSTEM SHALL contain the text `29733`.
 
@@ -2613,7 +2613,7 @@ pnpm typecheck                                                # expect: exit 0 (
 pnpm lint                                                     # expect: exit 0
 pnpm --filter @tekinsof/web build                             # expect: exit 0
 grep -q "application/ld+json" apps/web/dist/index.html        # expect: exit 0
-grep -q "wa.me/51981053022" apps/web/dist/index.html          # expect: exit 0
+grep -q "wa.me/51959926642" apps/web/dist/index.html          # expect: exit 0
 grep -q 'name="fullName"' apps/web/dist/index.html            # expect: exit 0 — the island is server-rendered
 grep -q "29733" apps/web/dist/privacidad.html                 # expect: exit 0
 status=0; grep -q "fonts.googleapis.com" apps/web/dist/index.html || status=$?; test "$status" -eq 1
@@ -2659,7 +2659,7 @@ git tag step-10-site-base
   4. Acuse al prospecto solo si tiene email y `source` ∈ web_form, landing: **desde el buzón del
      dueño** (si el dueño es `ventas`; si es el respaldo `gerencia`, desde `systemSender`), asunto
      "Recibimos tu consulta — Tekinsof", firmado con el nombre del dueño, con el WhatsApp
-     +51 981 053 022; `replyTo` = email del dueño.
+     +51 959 926 642; `replyTo` = email del dueño.
   5. Un fallo de correo **no** deshace la asignación: devuelve `notified`/`acknowledged` en false.
 - `packages/core/test/lead-created.test.ts` — con mailer `log`: dos `ventas` (A sin
   `last_assigned_at`, B con ayer) y un `gerencia`; tres leads consecutivos quedan para A, B, A; volver
@@ -3207,7 +3207,7 @@ git tag step-17-cms-landings
   Idempotente: `services` por `code` (`on conflict do update` de nombre, slug, categoría, summary,
   `is_published`, `is_featured`, `sort_order`), `holidays` por `date` (`do nothing`),
   `app_settings` por `key` (`do nothing`): `exchange_rate_default` = `{ "usdToPen": "3.7500" }` y
-  `company_profile` = `{ "legalName": "Tekinsof Consulting", "ruc": "", "address": "Av. La Molina 145, Ate, Lima", "email": "info@tekinsof.com", "phone": "+51 981 053 022" }`.
+  `company_profile` = `{ "legalName": "Tekinsof Consulting", "ruc": "", "address": "Av. Separadora Industrial Nro. 3144, Urb. Mayorazgo Etapa Tres, Lima, Perú", "email": "info@tekinsof.com", "phone": "+51 959 926 642" }`.
   Si `SEED_DEMO === "1"`: campaña `demo-google` (`google_ads`) y landing publicada
   `demo-desarrollo-software` ("Desarrollo de software a medida") con bloques `hero`, `benefits`
   (3 ítems), `faq` (2 ítems) y `form` (`fullName`, `email`, `phone`, `companyName`, `message`;
@@ -3319,7 +3319,7 @@ correo.
 | # | Comportamiento que se conserva | Cómo se prueba | Tolerancia |
 |---|---|---|---|
 | 1 | `https://tekinsof.com/` responde 200 con HTTPS válido | `curl -sS -o /dev/null -w "%{http_code}" https://tekinsof.com/` → `200` y `curl -vI` sin error de certificado | exacto |
-| 2 | Datos de contacto (dirección, correo, WhatsApp) idénticos | `curl -s https://tekinsof.com/ \| grep -q "Av. La Molina 145"` y `grep -q "wa.me/51981053022"` | exacto |
+| 2 | Datos de contacto (dirección, correo, WhatsApp) idénticos | `curl -s https://tekinsof.com/ \| grep -q "Av. Separadora Industrial Nro. 3144"` y `grep -q "wa.me/51959926642"` | exacto |
 | 3 | Enlace de reserva de Microsoft Bookings | `curl -s https://tekinsof.com/ \| grep -q "outlook.office365.com/book/"` | exacto |
 | 4 | El correo de `@tekinsof.com` sigue llegando | `nslookup -type=MX tekinsof.com` devuelve `tekinsof-com.mail.protection.outlook.com` antes y después | exacto |
 | 5 | `www.tekinsof.com` lleva a la versión canónica | `curl -sI https://www.tekinsof.com/` → 308/301 a `https://tekinsof.com/` | exacto |
@@ -3418,7 +3418,7 @@ red. `apps/crm/src/lib/env.ts` exige las marcadas "prod" **solo** con `VERCEL_EN
 | `VERCEL_DEPLOY_HOOK_URL` | regenerar el sitio al publicar | Vercel → `tekinsof-web` → Settings → Git → Deploy Hooks | prod (usada desde 12) | sí |
 | `PUBLIC_LEADS_API_URL` | endpoint al que postea el formulario | `https://crm.tekinsof.com/api/public/leads` | 10 | no |
 | `PUBLIC_TURNSTILE_SITE_KEY` | widget del formulario; local = `1x00000000000000000000AA` | Cloudflare → Turnstile | 10 | no |
-| `PUBLIC_WHATSAPP_NUMBER` | click-to-chat | `51981053022` | 10 | no |
+| ~~`PUBLIC_WHATSAPP_NUMBER`~~ | retirada (2026-10-29): el número es fijo en `packages/core/src/company.ts` | — | 10 | no |
 | `PUBLIC_BOOKINGS_URL` | CTA "Agenda una reunión" | enlace actual de Microsoft Bookings | 10 | no |
 | `PUBLIC_GA4_ID`, `PUBLIC_META_PIXEL_ID`, `PUBLIC_LINKEDIN_PARTNER_ID` | píxeles tras consentimiento (vacíos = sin banner) | consolas de anuncios | 10 | no |
 | `VERCEL_ENV`, `VERCEL_GIT_COMMIT_SHA`, `NEXT_PHASE`, `TEST_WORKER_INDEX` | los fijan Vercel, Next (`next build`) y Playwright (procesos worker) | — | — | no |

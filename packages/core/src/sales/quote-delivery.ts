@@ -10,6 +10,7 @@ import {
 import { eq } from "drizzle-orm";
 import { createElement as h, type ReactElement } from "react";
 import { type Actor, can } from "../auth/permissions.ts";
+import { company } from "../company.ts";
 import type { DbOrTx } from "../db/client.ts";
 import { appSettings, quotes } from "../db/schema.ts";
 import { escapeHtml, type Mailer } from "../integrations/graph.ts";
@@ -173,11 +174,11 @@ export async function renderQuotePdf(data: QuotePdfData): Promise<Uint8Array> {
 }
 
 const defaultProfile: CompanyProfile = {
-  legalName: "Tekinsof Consulting",
+  legalName: company.legalName,
   ruc: "",
-  address: "Av. La Molina 145, Ate, Lima",
-  email: "info@tekinsof.com",
-  phone: "+51 981 053 022",
+  address: company.address,
+  email: company.email,
+  phone: company.phone,
 };
 
 async function loadPdfData(db: DbOrTx, quoteId: string): Promise<QuotePdfData | null> {

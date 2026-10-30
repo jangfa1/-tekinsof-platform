@@ -575,7 +575,7 @@ a running order
   Idempotente: `services` por `code` (`on conflict do update` de nombre, slug, categoría, summary,
   `is_published`, `is_featured`, `sort_order`), `holidays` por `date` (`do nothing`),
   `app_settings` por `key` (`do nothing`): `exchange_rate_default` = `{ "usdToPen": "3.7500" }` y
-  `company_profile` = `{ "legalName": "Tekinsof Consulting", "ruc": "", "address": "Av. La Molina 145, Ate, Lima", "email": "info@tekinsof.com", "phone": "+51 981 053 022" }`.
+  `company_profile` = `{ "legalName": "Tekinsof Consulting", "ruc": "", "address": "Av. Separadora Industrial Nro. 3144, Urb. Mayorazgo Etapa Tres, Lima, Perú", "email": "info@tekinsof.com", "phone": "+51 959 926 642" }`.
   Si `SEED_DEMO === "1"`: campaña `demo-google` (`google_ads`) y landing publicada
   `demo-desarrollo-software` ("Desarrollo de software a medida") con bloques `hero`, `benefits`
   (3 ítems), `faq` (2 ítems) y `form` (`fullName`, `email`, `phone`, `companyName`, `message`;

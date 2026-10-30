@@ -6,19 +6,22 @@ import {
   landingBlocksSchema,
   listPublishedLandings,
 } from "@tekinsof/core/cms/landings";
+import { company } from "@tekinsof/core/company";
 import { getDb } from "@tekinsof/core/db/client";
 
 // PUBLIC_* values shared by every page that renders the lead form or WhatsApp links.
 export const site = {
   apiUrl: process.env.PUBLIC_LEADS_API_URL || "http://localhost:3000/api/public/leads",
   siteKey: process.env.PUBLIC_TURNSTILE_SITE_KEY || "1x00000000000000000000AA",
-  whatsappNumber: process.env.PUBLIC_WHATSAPP_NUMBER || "51981053022",
   bookingsUrl: process.env.PUBLIC_BOOKINGS_URL || "#contacto",
   consentVersion: "2026-10",
 };
 
+// Contact data is fixed (packages/core/src/company.ts), not configurable per environment.
+export { company };
+
 export const whatsappLink = (text: string) =>
-  `https://wa.me/${site.whatsappNumber}?text=${encodeURIComponent(text)}`;
+  `https://wa.me/${company.whatsapp}?text=${encodeURIComponent(text)}`;
 
 export type ServiceGroup = { title: string; services: Service[] };
 

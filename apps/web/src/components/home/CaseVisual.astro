@@ -1,0 +1,150 @@
+---
+// Illustration of what each project built (decorative, aria-hidden). It shows the shape of the
+// solution — systems, pipeline, funnel — and carries no figures beyond the case's own metric.
+import type { CaseStudy } from "../../lib/home-cases.ts";
+import Icon from "../ui/Icon.astro";
+
+interface Props {
+  kind: CaseStudy["visual"];
+}
+
+const { kind } = Astro.props;
+
+const syncRows = ["Clientes", "Proyectos", "Órdenes", "Facturación"];
+const sources = [
+  { icon: "globe", label: "Formularios web" },
+  { icon: "target", label: "Campañas" },
+  { icon: "message-circle", label: "WhatsApp" },
+] as const;
+const board = [
+  { stage: "Nuevo", cards: 3 },
+  { stage: "Seguimiento", cards: 2 },
+  { stage: "Propuesta", cards: 2 },
+  { stage: "Ganado", cards: 1 },
+];
+const funnel = [
+  { label: "Visitas a la landing", width: "w-full" },
+  { label: "Formularios completados", width: "w-4/5" },
+  { label: "Audiencias segmentadas", width: "w-3/5" },
+  { label: "Prospectos convertidos", width: "w-2/5" },
+];
+const segments = ["Promociones", "Fidelización", "Estrenos"];
+---
+
+<div aria-hidden="true" class="relative select-none">
+  <div class="flex items-center gap-2 border-b border-border px-4 py-3">
+    <span class="size-2.5 rounded-full bg-border"></span>
+    <span class="size-2.5 rounded-full bg-border"></span>
+    <span class="size-2.5 rounded-full bg-border"></span>
+    <span class="eyebrow ml-auto text-fg-muted">Vista ilustrativa</span>
+  </div>
+
+  {
+    kind === "sync" && (
+      <div class="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 p-4 sm:gap-3 sm:p-6">
+        {["CRM", "ERP"].map((system, s) => (
+          <div class:list={["rounded-[var(--radius-control)] border border-border bg-background p-3", s === 1 && "col-start-3"]}>
+            <p class="flex items-center gap-2 font-mono text-xs font-medium">
+              <Icon name={s === 0 ? "users" : "database"} class="size-4 text-fg-muted" />
+              {system}
+            </p>
+            <ul class="mt-3 grid gap-2">
+              {syncRows.map((row) => (
+                <li class="flex items-center justify-between gap-2 rounded-md bg-surface px-2 py-1.5 text-xs">
+                  <span class="truncate">{row}</span>
+                  <Icon name="check" class="size-3.5 text-success" />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        <div class="col-start-2 row-start-1 flex flex-col items-center gap-3">
+          {[0, 1, 2].map((i) => (
+            <span class="relative block h-px w-6 bg-border sm:w-16">
+              <span class="packet absolute inset-y-0 left-0 w-full" style={`animation-delay: -${i * 1.3}s`}>
+                <span class="absolute -top-1 left-0 size-2 rounded-full bg-fg/60" />
+              </span>
+            </span>
+          ))}
+          <span class="hidden rounded-full border border-border bg-background px-2 py-1 font-mono text-xs whitespace-nowrap text-fg-muted sm:inline">
+            Web Services
+          </span>
+        </div>
+      </div>
+    )
+  }
+
+  {
+    kind === "pipeline" && (
+      <div class="grid gap-4 p-5 sm:p-6">
+        <ul class="flex flex-wrap gap-2">
+          {sources.map((s) => (
+            <li class="inline-flex items-center gap-2 rounded-full border border-border bg-background px-3 py-1 text-xs font-medium">
+              <Icon name={s.icon} class="size-3.5 text-fg-muted" />
+              {s.label}
+            </li>
+          ))}
+        </ul>
+        <div class="grid grid-cols-4 gap-2">
+          {board.map((col, c) => (
+            <div class="rounded-[var(--radius-control)] bg-background p-2">
+              <p class="truncate text-xs font-medium text-fg-muted">{col.stage}</p>
+              <div class="mt-2 grid gap-1.5">
+                {Array.from({ length: col.cards }, (_, k) => (
+                  <span
+                    class:list={[
+                      "block h-7 rounded-md border border-border bg-surface",
+                      c === 3 && "border-success/40 bg-success/10",
+                      c === 0 && k === 0 && "float",
+                    ]}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p class="flex items-center gap-3 rounded-[var(--radius-control)] border border-border bg-background p-3 text-xs">
+          <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
+            <Icon name="zap" class="size-4" />
+          </span>
+          <span>
+            <span class="block font-semibold">Lead asignado automáticamente</span>
+            <span class="block text-fg-muted">Seguimiento programado para el equipo comercial</span>
+          </span>
+        </p>
+      </div>
+    )
+  }
+
+  {
+    kind === "funnel" && (
+      <div class="grid gap-4 p-5 sm:grid-cols-[1fr_1.1fr] sm:p-6">
+        <div class="rounded-[var(--radius-control)] border border-border bg-background p-3">
+          <span class="block h-16 rounded-md bg-linear-to-br from-surface-accent to-surface" />
+          <span class="mt-3 block h-2.5 w-3/4 rounded-full bg-fg/15" />
+          <span class="mt-2 block h-2 w-1/2 rounded-full bg-fg/10" />
+          <span class="mt-4 grid gap-1.5">
+            <span class="block h-6 rounded-md border border-border" />
+            <span class="block h-6 rounded-md border border-border" />
+            <span class="block h-7 rounded-md bg-fg/80" />
+          </span>
+        </div>
+        <div class="grid content-center gap-2">
+          {funnel.map((step) => (
+            <div>
+              <p class="text-xs text-fg-muted">{step.label}</p>
+              <span class="mt-1 block h-2 rounded-full bg-border">
+                <span class:list={["block h-2 rounded-full bg-fg/70", step.width]} />
+              </span>
+            </div>
+          ))}
+          <ul class="mt-2 flex flex-wrap gap-1.5">
+            {segments.map((s) => (
+              <li class="rounded-full bg-surface-accent px-2 py-0.5 text-xs font-medium">{s}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    )
+  }
+</div>

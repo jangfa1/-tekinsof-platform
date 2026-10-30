@@ -15,13 +15,13 @@ const { whatsappHref } = Astro.props;
     class="wa-tip pointer-events-none absolute right-full bottom-2 mr-4 w-max rounded-[var(--radius-control)] border border-border bg-background px-4 py-3 text-sm shadow-dialog"
   >
     <span class="block font-semibold">¿Hablamos?</span>
-    <span class="block text-xs text-fg-muted">Te respondemos por WhatsApp</span>
+    <span class="block text-xs text-fg-muted">Respondemos en menos de 4 horas laborables</span>
   </span>
   <a
     id="whatsapp-float"
     data-wa
     href={whatsappHref}
-    aria-label="Escríbenos por WhatsApp"
+    aria-label="Hablar por WhatsApp"
     class="press group relative inline-flex size-14 items-center justify-center rounded-full bg-success text-primary-fg shadow-float"
   >
     <span aria-hidden="true" class="ping absolute inset-0 rounded-full bg-success"></span>
@@ -38,10 +38,10 @@ const { whatsappHref } = Astro.props;
   class="after-hero fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 gap-2 border-t border-border bg-background/90 p-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden"
 >
   <a href="/#contacto" class="press inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-accent text-sm font-semibold text-accent-fg">
-    Cotizar <Icon name="arrow-right" class="size-4" />
+    Solicitar cotización
   </a>
   <a data-wa href={whatsappHref} class="press inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--radius-control)] bg-success text-sm font-semibold text-primary-fg">
-    <Icon name="message-circle" class="size-4" /> WhatsApp
+    Hablar por WhatsApp
   </a>
 </nav>
 

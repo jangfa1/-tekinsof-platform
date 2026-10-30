@@ -49,10 +49,10 @@ const jsonLd = {
       <p class="mt-4 max-w-2xl text-lg text-fg-muted">{service.summary}</p>
       <div class="mt-8 flex flex-wrap gap-4">
         <a href="#contacto" class="inline-flex min-h-11 items-center rounded-[var(--radius-control)] bg-accent px-6 font-medium text-accent-fg">
-          Cotiza este servicio
+          Solicitar cotización
         </a>
         <a href={whatsappHref} class="inline-flex min-h-11 items-center rounded-[var(--radius-control)] border border-border bg-background px-6 font-medium">
-          Escríbenos por WhatsApp
+          Hablar por WhatsApp
         </a>
       </div>
     </div>
@@ -82,6 +82,7 @@ const jsonLd = {
           services={options}
           defaultService={service.slug}
           consentVersion={site.consentVersion}
+          whatsappHref={whatsappHref}
         />
       </div>
     </div>

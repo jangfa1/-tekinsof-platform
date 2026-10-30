@@ -1,5 +1,5 @@
-// Fixed home-page copy. Everything here is a description of what Tekinsof does, never a claim
-// about clients or results; those live in home-placeholders.ts until verified data arrives.
+// Fixed home-page copy. Everything here describes what Tekinsof does, never a claim about clients
+// or results; authorised client stories, testimonial and logos live in home-cases.ts.
 import type { IconName } from "./icons.ts";
 
 // Service slug → icon; unknown slugs fall back per category.

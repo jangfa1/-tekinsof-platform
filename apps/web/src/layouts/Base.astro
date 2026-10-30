@@ -2,7 +2,7 @@
 import ContactDock from "../components/layout/ContactDock.astro";
 import SiteFooter from "../components/layout/SiteFooter.astro";
 import SiteHeader from "../components/layout/SiteHeader.astro";
-import { getPublishedServices } from "../lib/content.ts";
+import { company, getPublishedServices, whatsappLink } from "../lib/content.ts";
 import "../styles/global.css";
 
 interface Props {
@@ -31,14 +31,12 @@ const services = await getPublishedServices();
 const ogImage = new URL(image, "https://tekinsof.com").toString();
 
 // PUBLIC_* values are read at build time; the site is fully static.
-const whatsappNumber = process.env.PUBLIC_WHATSAPP_NUMBER || "51981053022";
 const ga4 = process.env.PUBLIC_GA4_ID ?? "";
 const metaPixel = process.env.PUBLIC_META_PIXEL_ID ?? "";
 const linkedin = process.env.PUBLIC_LINKEDIN_PARTNER_ID ?? "";
 const hasPixels = Boolean(ga4 || metaPixel || linkedin);
 
-const whatsappText = `Hola Tekinsof, quiero información (${Astro.url.pathname})`;
-const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappText)}`;
+const whatsappHref = whatsappLink(`Hola Tekinsof, quiero información (${Astro.url.pathname})`);
 
 const graph = {
   "@context": "https://schema.org",
@@ -50,15 +48,31 @@ const graph = {
       url: "https://tekinsof.com",
       logo: "https://tekinsof.com/og-default.png",
       image: "https://tekinsof.com/og-default.png",
-      email: "info@tekinsof.com",
-      telephone: "+51981053022",
+      email: company.email,
+      telephone: company.phoneE164,
       areaServed: { "@type": "Country", name: "Perú" },
       address: {
         "@type": "PostalAddress",
-        streetAddress: "Av. La Molina 145",
-        addressLocality: "Ate",
+        streetAddress: company.streetAddress,
+        addressLocality: company.locality,
         addressRegion: "Lima",
         addressCountry: "PE",
+      },
+      hasMap: company.mapsUrl,
+      openingHoursSpecification: {
+        "@type": "OpeningHoursSpecification",
+        dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+        opens: "09:00",
+        closes: "18:00",
+      },
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "sales",
+        telephone: company.phoneE164,
+        email: company.email,
+        url: `https://wa.me/${company.whatsapp}`,
+        availableLanguage: "es",
+        areaServed: "PE",
       },
     },
     {
@@ -95,6 +109,8 @@ const graph = {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
     <meta name="theme-color" content="#121417" />
+    <meta name="geo.region" content="PE-LMA" />
+    <meta name="geo.placename" content="Lima" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     {noindex && <meta name="robots" content="noindex, follow" />}
     <script type="application/ld+json" set:html={JSON.stringify(graph)} />

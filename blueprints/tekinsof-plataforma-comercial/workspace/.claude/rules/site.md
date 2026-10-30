@@ -11,4 +11,4 @@ paths:
 - Same tokens as the CRM (light only); `accent` buttons carry `text-accent-fg` (never white text on coral).
 - Fonts are self-hosted through Fontsource; never link Google Fonts.
 - Ad pixels load only after `localStorage.tk_consent === "granted"`.
-- Contact data is fixed: Av. La Molina 145, Ate, Lima · info@tekinsof.com · +51 981 053 022 — keep it identical everywhere (SEO parity, blueprint §9.1).
+- Contact data is fixed: Av. Separadora Industrial Nro. 3144, Urb. Mayorazgo Etapa Tres, Lima, Perú · info@tekinsof.com · +51 959 926 642 (WhatsApp) · lunes a viernes 9:00–18:00 — single source `packages/core/src/company.ts`; keep it identical everywhere (SEO parity, blueprint §9.1).

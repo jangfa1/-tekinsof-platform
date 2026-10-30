@@ -1,5 +1,7 @@
 ---
 import type { Service } from "@tekinsof/core/catalog/services";
+import { company } from "../../lib/content.ts";
+import Icon from "../ui/Icon.astro";
 
 interface Props {
   services: Service[];
@@ -46,10 +48,23 @@ const year = new Date().getFullYear();
     }
     <div>
       <p class="eyebrow text-fg-muted">Contacto</p>
-      <address class="mt-4 grid gap-2 not-italic text-fg-muted">
-        <span>Av. La Molina 145, Ate, Lima</span>
-        <a href="mailto:info@tekinsof.com" class="text-link">info@tekinsof.com</a>
-        <a href="tel:+51981053022" class="text-link">+51 981 053 022</a>
+      <address class="mt-4 grid gap-3 not-italic text-fg-muted">
+        <a href={company.mapsUrl} rel="noopener" target="_blank" class="flex gap-2 hover:text-fg">
+          <Icon name="map-pin" class="mt-0.5 size-4 shrink-0" />
+          {company.address}
+        </a>
+        <a href={`https://wa.me/${company.whatsapp}`} data-wa class="flex items-center gap-2 text-link">
+          <Icon name="phone" class="size-4 shrink-0" />
+          {company.phone}
+        </a>
+        <a href={`mailto:${company.email}`} class="flex items-center gap-2 text-link">
+          <Icon name="mail" class="size-4 shrink-0" />
+          {company.email}
+        </a>
+        <span class="flex gap-2">
+          <Icon name="clock" class="mt-0.5 size-4 shrink-0" />
+          {company.hours}
+        </span>
       </address>
     </div>
   </div>

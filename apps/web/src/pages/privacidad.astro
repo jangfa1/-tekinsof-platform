@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import { company } from "../lib/content.ts";
 
 // Final wording is validated by the client's legal advisor before launch (blueprint §20.1).
 ---
@@ -19,7 +20,7 @@ import Base from "../layouts/Base.astro";
     </p>
 
     <h2 class="font-display text-xl font-semibold">Responsable del tratamiento</h2>
-    <p>Tekinsof Consulting, con domicilio en Av. La Molina 145, Ate, Lima, Perú.</p>
+    <p>Tekinsof Consulting, con domicilio en {company.address}.</p>
 
     <h2 class="font-display text-xl font-semibold">Datos que recogemos</h2>
     <p>

@@ -6,6 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sql } from "drizzle-orm";
 import { landingBlocksSchema } from "../src/cms/block-schema.ts";
+import { company } from "../src/company.ts";
 import { createDb } from "../src/db/client.ts";
 import { appSettings, campaigns, holidays, landingPages, services } from "../src/db/schema.ts";
 import { demoBlocks as demoContent, holidayRows, serviceRows } from "./seed-catalog.ts";
@@ -42,20 +43,20 @@ try {
   await db.insert(holidays).values(holidayRows).onConflictDoNothing({ target: holidays.date });
   await db
     .insert(appSettings)
-    .values([
-      { key: "exchange_rate_default", value: { usdToPen: "3.7500" } },
-      {
-        key: "company_profile",
-        value: {
-          legalName: "Tekinsof Consulting",
-          ruc: "",
-          address: "Av. La Molina 145, Ate, Lima",
-          email: "info@tekinsof.com",
-          phone: "+51 981 053 022",
-        },
-      },
-    ])
+    .values({ key: "exchange_rate_default", value: { usdToPen: "3.7500" } })
     .onConflictDoNothing({ target: appSettings.key });
+  // Contact fields always follow src/company.ts; anything else stored (e.g. the RUC) is kept.
+  const contact = { address: company.address, email: company.email, phone: company.phone };
+  await db
+    .insert(appSettings)
+    .values({
+      key: "company_profile",
+      value: { legalName: company.legalName, ruc: "", ...contact },
+    })
+    .onConflictDoUpdate({
+      target: appSettings.key,
+      set: { value: sql`${appSettings.value} || ${JSON.stringify(contact)}::jsonb` },
+    });
 
   if (process.env.SEED_DEMO === "1") {
     await db

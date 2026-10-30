@@ -12,6 +12,7 @@ type Props = {
   fields?: FieldName[];
   submitLabel?: string;
   consentVersion: string;
+  whatsappHref: string;
 };
 
 type Attribution = {
@@ -41,7 +42,6 @@ const DEFAULT_FIELDS: FieldName[] = [
   "serviceInterest",
   "message",
 ];
-const WHATSAPP = "https://wa.me/51981053022";
 const TURNSTILE_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 const labels: Record<FieldName, string> = {
   fullName: "Nombre y apellido",
@@ -105,6 +105,7 @@ export default function LeadForm({
   fields = DEFAULT_FIELDS,
   submitLabel = "Quiero que me contacten",
   consentVersion,
+  whatsappHref,
 }: Props) {
   const id = useId();
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -289,7 +290,7 @@ export default function LeadForm({
       {status === "failed" ? (
         <p role="alert" className="text-sm text-destructive">
           No pudimos enviar tu mensaje. Escríbenos por{" "}
-          <a href={WHATSAPP} className="text-link underline">
+          <a href={whatsappHref} className="text-link underline">
             WhatsApp
           </a>{" "}
           y te atendemos de inmediato.
