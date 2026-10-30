@@ -161,9 +161,27 @@ export const testimonial = {
   tags: ["ERP S10", "Levantamiento de requerimientos", "Acompañamiento"],
 };
 
+// Client wall: the case-study and testimonial clients first, then the rest (authorised 2026-10-29).
+const wall = (name: string, file: string, width: number, height: number): ClientLogo => ({
+  name,
+  src: `/clientes/${file}.webp`,
+  width,
+  height,
+});
+
 export const clientLogos: ClientLogo[] = [
   logos.madrid,
   logos.wescon,
   logos.cineplanet,
   logos.porta,
+  wall("Alegra Inmobiliaria", "alegra-inmobiliaria", 268, 140),
+  wall("Editora Perú", "editora-peru", 462, 107),
+  wall("Euroshop", "euroshop", 225, 83),
+  wall("Fondo MIVIVIENDA", "fondo-mivivienda", 345, 89),
+  wall("Grupo Santamaria", "grupo-santamaria", 402, 140),
+  wall("Livit Inmobiliaria & Construcción", "livit", 231, 140),
+  wall("Universidad Tecnológica del Perú", "utp", 636, 140),
+  wall("Vienna Grupo Inmobiliario", "vienna", 325, 95),
+  wall("Vitain Inmobiliaria", "vitain-inmobiliaria", 263, 140),
+  wall("Yape", "yape", 116, 140),
 ];

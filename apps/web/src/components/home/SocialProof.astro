@@ -59,12 +59,12 @@ const initials = testimonial.name
       <Eyebrow index="09">Clientes</Eyebrow>
       <h2 class="font-display text-2xl font-bold tracking-tight md:text-3xl">Empresas que confían en Tekinsof</h2>
     </div>
-    <ul class="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
+    <ul class="mt-12 grid grid-cols-2 gap-4 lg:grid-cols-7">
       {
         clientLogos.map((logo, i) => (
           <li
             class:list={[
-              "reveal card-premium flex h-28 items-center justify-center rounded-[var(--radius-card)] border border-border bg-background px-6",
+              "reveal card-premium flex h-24 items-center justify-center rounded-[var(--radius-card)] border border-border bg-background px-4",
               i % 3 === 1 && "reveal-2",
               i % 3 === 2 && "reveal-3",
             ]}
@@ -76,7 +76,7 @@ const initials = testimonial.name
               height={logo.height}
               loading="lazy"
               decoding="async"
-              class="max-h-14 w-auto max-w-full object-contain"
+              class="max-h-12 w-auto max-w-full object-contain"
             />
           </li>
         ))
