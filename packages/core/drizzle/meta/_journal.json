@@ -8,6 +8,13 @@
       "when": 1793124681407,
       "tag": "0000_flowery_terrax",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793337346440,
+      "tag": "0001_colossal_arachne",
+      "breakpoints": true
     }
   ]
 }
