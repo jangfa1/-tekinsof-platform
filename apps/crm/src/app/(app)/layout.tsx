@@ -1,5 +1,6 @@
 import type { Permission } from "@tekinsof/core/auth/permissions";
 import { can } from "@tekinsof/core/auth/permissions";
+import { findActiveIntegration } from "@tekinsof/core/integrations/catalog";
 import {
   BookOpen,
   Building2,
@@ -7,6 +8,7 @@ import {
   KanbanSquare,
   LayoutTemplate,
   type LucideIcon,
+  Plug,
   Settings,
   UserRound,
   Users,
@@ -34,6 +36,12 @@ const navItems: NavItem[] = [
   { label: "Contactos", href: "/contactos", permission: "accounts.read", icon: UserRound },
   { label: "Catálogo", href: "/catalogo", permission: "catalog.read", icon: BookOpen },
   { label: "Landings", href: "/landings", permission: "landings.write", icon: LayoutTemplate },
+  {
+    label: "Integraciones",
+    href: "/configuracion/integraciones",
+    permission: "integrations.manage",
+    icon: Plug,
+  },
   {
     label: "Usuarios",
     href: "/configuracion/usuarios",
@@ -106,6 +114,11 @@ async function denyUnpermittedRoute(actor: SessionActor) {
   const pathname = (await headers()).get("x-pathname") ?? "";
   const item = navItems.find((nav) => pathname === nav.href || pathname.startsWith(`${nav.href}/`));
   if (item && !can(actor, item.permission)) notFound();
+  // The integration pages come from a fixed catalog, so an unknown or upcoming id is a 404 too.
+  const [, , section, integrationId] = pathname.split("/");
+  if (section === "integraciones" && integrationId && !findActiveIntegration(integrationId)) {
+    notFound();
+  }
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {

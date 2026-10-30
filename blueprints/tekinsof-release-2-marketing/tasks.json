@@ -169,7 +169,7 @@
       "pnpm test"
     ],
     "checkpoint": "r2-step-07-integrations-ui",
-    "status": "todo"
+    "status": "done"
   },
   {
     "id": "r2-08",

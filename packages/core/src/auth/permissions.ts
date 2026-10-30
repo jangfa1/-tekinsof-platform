@@ -25,6 +25,8 @@ export const permissions = [
   "campaigns.write",
   "landings.write",
   "landings.publish",
+  "integrations.manage",
+  "dashboard.marketing",
 ] as const;
 export type Permission = (typeof permissions)[number];
 
@@ -56,6 +58,7 @@ const grants: Record<Role, readonly Permission[]> = {
     "campaigns.write",
     "landings.write",
     "landings.publish",
+    "dashboard.marketing",
   ],
   administracion: [
     "leads.read",
