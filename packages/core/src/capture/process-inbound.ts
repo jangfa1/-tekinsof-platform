@@ -2,6 +2,10 @@ import { and, eq } from "drizzle-orm";
 import type { DbOrTx } from "../db/client.ts";
 import { adForms, inboundEvents, integrationAccounts } from "../db/schema.ts";
 import {
+  toExternalLead as googleToExternalLead,
+  parseGoogleLead,
+} from "../integrations/google-leads.ts";
+import {
   fetchMetaLead,
   leadgenValue,
   type MetaDeps,
@@ -82,6 +86,41 @@ async function processMeta(
   return ok({ status: "procesado", leadId: ingested.data.leadId });
 }
 
+// The webhook already checked the form's key; the payload carries the lead and its ad form id.
+async function processGoogle(
+  db: DbOrTx,
+  event: { id: string; payload: unknown; receivedAt: Date },
+): Promise<Processed> {
+  const lead = parseGoogleLead(event.payload);
+  const adFormId = (event.payload as { ad_form_id?: unknown }).ad_form_id;
+  if (!lead.ok || typeof adFormId !== "string") {
+    return settle(db, event.id, "error", "Lead de Google inválido");
+  }
+  const [form] = await db
+    .select({
+      externalFormId: adForms.externalFormId,
+      name: adForms.name,
+      fieldMapping: adForms.fieldMapping,
+    })
+    .from(adForms)
+    .where(eq(adForms.id, adFormId));
+  if (!form) return settle(db, event.id, "ignorado", "Formulario de Google eliminado");
+
+  const external = googleToExternalLead(
+    lead.data,
+    {
+      externalFormId: form.externalFormId,
+      name: form.name,
+      mapping: form.fieldMapping as Record<string, string>,
+    },
+    event.receivedAt,
+  );
+  const ingested = await ingestExternalLead(db, external);
+  if (!ingested.ok) return settle(db, event.id, "error", ingested.error.message);
+  await markInbound(db, event.id, "procesado");
+  return ok({ status: "procesado", leadId: ingested.data.leadId });
+}
+
 export async function processInbound(
   db: DbOrTx,
   deps: ProcessDeps,
@@ -96,8 +135,10 @@ export async function processInbound(
   switch (event.provider) {
     case "meta":
       return processMeta(db, deps, event);
+    case "google_ads":
+      return processGoogle(db, event);
     default:
-      // Google (r2-05) and TikTok (r2-06) adapters plug in here.
+      // The TikTok adapter (r2-06) plugs in here.
       return settle(db, event.id, "ignorado", `Proveedor ${event.provider} aún no soportado`);
   }
 }

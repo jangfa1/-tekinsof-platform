@@ -26,6 +26,8 @@ const env: Record<string, string> = {
   META_APP_SECRET: "e2e-meta-app-secret",
   META_VERIFY_TOKEN: "e2e-meta-verify-token",
   TIKTOK_WEBHOOK_SECRET: "e2e-tiktok-webhook-secret",
+  // 32 bytes; e2e/helpers/fixtures.ts seals the Google form key with it.
+  INTEGRATIONS_ENCRYPTION_KEY: "ZTJlLW9ubHktaW50ZWdyYXRpb25zLWtleS0zMmJ5dGU=",
 };
 
 export default defineConfig({
@@ -38,7 +40,8 @@ export default defineConfig({
   use: { baseURL: "http://localhost:3000", trace: "retain-on-failure" },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
-    command: "node ../../packages/core/scripts/migrate.ts && pnpm exec next start -p 3000",
+    command:
+      "node ../../packages/core/scripts/migrate.ts && node e2e/helpers/fixtures.ts && pnpm exec next start -p 3000",
     url: "http://localhost:3000/api/health",
     reuseExistingServer: false,
     timeout: 180_000,
