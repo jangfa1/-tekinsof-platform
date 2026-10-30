@@ -10,7 +10,7 @@ Todos desde la raíz del repositorio.
 | Task | Command |
 |---|---|
 | Install | `pnpm install` (CI: `pnpm install --frozen-lockfile`) |
-| Dev (CRM :3000 + sitio :4321) | `pnpm dev` (los jobs se prueban con los tests de core; Inngest local es opcional) |
+| Dev (CRM :3000 + sitio :4321) | `pnpm dev` (los jobs se prueban con los tests de core; Inngest local es opcional). Con PGlite el sitio usa su propia base `.data/web-dev` (`SITE_DEV_DATABASE_URL`), migrada y sembrada al arrancar |
 | Build (todo) | `pnpm build` · solo CRM: `pnpm --filter @tekinsof/crm build` · solo sitio: `pnpm --filter @tekinsof/web build` |
 | Typecheck | `pnpm typecheck` |
 | Lint / format | `pnpm lint` · `pnpm format` |
