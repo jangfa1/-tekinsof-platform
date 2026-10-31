@@ -352,6 +352,47 @@ export const leads = pgTable(
   ],
 );
 
+// ─── Attribution: every visit that brought a prospect (design.md §8) ─────────────────────────
+
+export const leadTouchpoints = pgTable(
+  "lead_touchpoints",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+    leadId: uuid()
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    occurredAt: timestamp({ withTimezone: true }).notNull(),
+    // true for the touch that created the lead; false when the same prospect came back.
+    isConversion: boolean().notNull(),
+    source: text().notNull(),
+    adPlatform: text(),
+    campaignId: uuid().references(() => campaigns.id, { onDelete: "set null" }),
+    landingSlug: text(),
+    adFormId: uuid().references(() => adForms.id, { onDelete: "set null" }),
+    adId: text(),
+    utmSource: text(),
+    utmMedium: text(),
+    utmCampaign: text(),
+    utmTerm: text(),
+    utmContent: text(),
+    gclid: text(),
+    fbclid: text(),
+    ttclid: text(),
+    referrer: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("idx_lead_touchpoints_lead").on(t.leadId, t.occurredAt),
+    index("idx_lead_touchpoints_campaign").on(t.campaignId, t.occurredAt),
+    check(
+      "ck_lead_touchpoints_ad_platform",
+      sql`${t.adPlatform} is null or ${t.adPlatform} in ('facebook','instagram','tiktok','google')`,
+    ),
+  ],
+);
+
 // ─── Lead scoring (rule-based; design.md §4.5 without the AI layer) ──────────────────────────
 
 export const scoringModels = pgTable(

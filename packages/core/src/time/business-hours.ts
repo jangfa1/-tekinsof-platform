@@ -48,3 +48,20 @@ export function addBusinessHours(start: Date, hours: number, holidays: ReadonlyS
   }
   throw new Error("addBusinessHours: no business day found within 10 years");
 }
+
+// Business time elapsed between two instants, in milliseconds (0 when `end` is not after `start`).
+export function businessMsBetween(start: Date, end: Date, holidays: ReadonlySet<string>): number {
+  let total = 0;
+  let day = limaDate(start);
+  const last = limaDate(end);
+  for (let guard = 0; guard < 3660; guard++) {
+    if (isBusinessDay(day, holidays)) {
+      const from = Math.max(start.getTime(), limaHour(day, WORK_START_HOUR));
+      const to = Math.min(end.getTime(), limaHour(day, WORK_END_HOUR));
+      if (to > from) total += to - from;
+    }
+    if (day >= last) return total;
+    day = nextDay(day);
+  }
+  return total;
+}

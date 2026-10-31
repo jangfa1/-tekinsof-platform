@@ -5,6 +5,7 @@ import { type Actor, can } from "../auth/permissions.ts";
 import { normalizePhonePe } from "../crm/accounts.ts";
 import type { DbOrTx } from "../db/client.ts";
 import { activities, campaigns, leads, outbox, users } from "../db/schema.ts";
+import { platformFromAttribution, recordTouchpoint } from "../marketing/attribution.ts";
 import { err, ok, type Result, validationError } from "../result.ts";
 import {
   type LeadStatus,
@@ -36,6 +37,26 @@ export async function createPublicLead(
   const phoneResult = normalizedPhone(data.phone);
   if (!phoneResult.ok) return phoneResult;
   const phone = phoneResult.data;
+  const campaignSlug = slug ?? utm?.campaign;
+  const [campaign] = campaignSlug
+    ? await db.select({ id: campaigns.id }).from(campaigns).where(eq(campaigns.slug, campaignSlug))
+    : [];
+  const attribution = {
+    landingSlug: data.landingSlug,
+    campaignId: campaign?.id ?? null,
+    utmSource: utm?.source,
+    utmMedium: utm?.medium,
+    utmCampaign: utm?.campaign,
+    utmTerm: utm?.term,
+    utmContent: utm?.content,
+    gclid: data.gclid,
+    fbclid: data.fbclid,
+    ttclid: data.ttclid,
+    referrer: data.referrer,
+    adPlatform: platformFromAttribution({ ...data, utmSource: utm?.source }),
+  };
+  const source = data.landingSlug ? "landing" : "web_form";
+  const now = new Date();
   const [duplicate] = await db
     .select({ id: leads.id })
     .from(leads)
@@ -48,30 +69,19 @@ export async function createPublicLead(
     )
     .orderBy(desc(leads.createdAt))
     .limit(1);
-  if (duplicate) return ok({ leadId: duplicate.id, deduplicated: true });
-
-  const campaignSlug = slug ?? utm?.campaign;
-  const [campaign] = campaignSlug
-    ? await db.select({ id: campaigns.id }).from(campaigns).where(eq(campaigns.slug, campaignSlug))
-    : [];
+  // The same prospect again within 24 h: no new lead, but the visit is kept as a touchpoint.
+  if (duplicate) {
+    await recordTouchpoint(db, duplicate.id, { ...attribution, source }, now, false);
+    return ok({ leadId: duplicate.id, deduplicated: true });
+  }
 
   return db.transaction(async (tx) => {
     const [row] = await tx
       .insert(leads)
-      .values({
-        ...data,
-        source: data.landingSlug ? "landing" : "web_form",
-        campaignId: campaign?.id ?? null,
-        phone,
-        utmSource: utm?.source,
-        utmMedium: utm?.medium,
-        utmCampaign: utm?.campaign,
-        utmTerm: utm?.term,
-        utmContent: utm?.content,
-        consentAt: new Date(),
-      })
+      .values({ ...data, ...attribution, source, phone, consentAt: now })
       .returning({ id: leads.id });
     if (!row) return err("INTERNAL", "No se pudo registrar el lead");
+    await recordTouchpoint(tx, row.id, { ...attribution, source }, now, true);
     await tx.insert(outbox).values({ eventName: "lead/created", payload: { leadId: row.id } });
     return ok({ leadId: row.id, deduplicated: false });
   });
@@ -102,6 +112,7 @@ export async function createManualLead(
       })
       .returning({ id: leads.id });
     if (!row) return err("INTERNAL", "No se pudo registrar el lead");
+    await recordTouchpoint(tx, row.id, { source: data.source }, new Date(), true);
     await tx.insert(outbox).values({ eventName: "lead/created", payload: { leadId: row.id } });
     await writeAudit(tx, {
       actorId: actor.id,

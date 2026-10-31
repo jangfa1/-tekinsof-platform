@@ -3,6 +3,7 @@ import { z } from "zod";
 import { normalizePhonePe } from "../crm/accounts.ts";
 import type { DbOrTx } from "../db/client.ts";
 import { adForms, campaigns, leads, outbox } from "../db/schema.ts";
+import { recordTouchpoint } from "../marketing/attribution.ts";
 import { err, ok, type Result, validationError } from "../result.ts";
 import { qualificationFromAnswers } from "../scoring/normalize.ts";
 import { type InboundProvider, inboundProviders } from "./inbound.ts";
@@ -147,6 +148,15 @@ export async function ingestExternalLead(db: DbOrTx, input: ExternalLead): Promi
         })
         .returning({ id: leads.id });
       if (!row) return err("INTERNAL", "No se pudo registrar el lead");
+      const touch = {
+        source,
+        adPlatform: lead.adPlatform,
+        campaignId,
+        adFormId: form?.id ?? null,
+        adId: lead.adId,
+        gclid: lead.gclid,
+      };
+      await recordTouchpoint(tx, row.id, touch, lead.submittedAt, true);
       // Platform test leads are kept for troubleshooting but never assigned or announced.
       if (!lead.isTest) {
         await tx.insert(outbox).values({ eventName: "lead/created", payload: { leadId: row.id } });
