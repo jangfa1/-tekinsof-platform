@@ -1,7 +1,11 @@
 "use server";
 
 import { getDb } from "@tekinsof/core/db/client";
-import { connectMetaPage, disconnectAccount } from "@tekinsof/core/integrations/accounts";
+import {
+  connectMetaAdAccount,
+  connectMetaPage,
+  disconnectAccount,
+} from "@tekinsof/core/integrations/accounts";
 import { createGoogleAdForm, mapAdForm } from "@tekinsof/core/integrations/ad-forms";
 import { sendTestLead, type TestRun } from "@tekinsof/core/integrations/testing";
 import type { Result } from "@tekinsof/core/result";
@@ -28,6 +32,18 @@ export async function connectMetaAction(input: {
   const actor = await authorize("integrations.manage");
   if (!actor.ok) return actor;
   const result = await connectMetaPage(getDb(), actor.data, integrationDeps(), input);
+  if (result.ok) revalidatePath(PATH, "layout");
+  return result;
+}
+
+export async function connectMetaAdAccountAction(input: {
+  adAccountId: string;
+  displayName: string;
+  token: string;
+}): Promise<Result<{ accountId: string }>> {
+  const actor = await authorize("integrations.manage");
+  if (!actor.ok) return actor;
+  const result = await connectMetaAdAccount(getDb(), actor.data, integrationDeps(), input);
   if (result.ok) revalidatePath(PATH, "layout");
   return result;
 }

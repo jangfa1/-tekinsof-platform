@@ -12,6 +12,7 @@ import { metaLeadsBackfill, purgeInboundEvents } from "@tekinsof/core/capture/ba
 import { processInbound } from "@tekinsof/core/capture/process-inbound";
 import { getDb } from "@tekinsof/core/db/client";
 import { createMailer } from "@tekinsof/core/integrations/graph";
+import { syncMetaSpend } from "@tekinsof/core/marketing/meta-spend";
 import { Inngest } from "inngest";
 import { getEnv } from "./env";
 
@@ -123,6 +124,15 @@ const metaBackfill = inngest.createFunction(
     ),
 );
 
+// 06:00 Lima: Meta ad spend of the last 3 days (Meta keeps adjusting recent days).
+const spendSync = inngest.createFunction(
+  { id: "spend-sync", triggers: [{ cron: "0 11 * * *" }] },
+  async ({ step }) =>
+    step.run("spend-sync", () =>
+      syncMetaSpend(getDb(), { ...deps(), ...captureDeps() }, new Date()),
+    ),
+);
+
 // 03:30 Lima: webhook bodies older than 90 days are deleted (personal data).
 const inboundPurge = inngest.createFunction(
   { id: "inbound-purge", triggers: [{ cron: "30 8 * * *" }] },
@@ -149,5 +159,6 @@ export const functions = [
   approvalRequested,
   inboundReceived,
   metaBackfill,
+  spendSync,
   inboundPurge,
 ];

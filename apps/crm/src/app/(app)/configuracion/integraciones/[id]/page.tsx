@@ -13,6 +13,7 @@ import { CopyField } from "@/components/integrations/copy-button";
 import { formatCount, formatSince } from "@/components/integrations/format";
 import { GoogleFormCreate } from "@/components/integrations/google-form-create";
 import { MetricRow } from "@/components/integrations/integration-card";
+import { MetaAdAccounts } from "@/components/integrations/meta-ad-accounts";
 import { MetaSettings } from "@/components/integrations/meta-settings";
 import { INTEGRATIONS_PATH } from "@/components/integrations/page-header";
 import { Monogram, StatusChip } from "@/components/integrations/status-chip";
@@ -22,6 +23,7 @@ import { getEnv } from "@/lib/env";
 import { currentOrganizationId } from "@/lib/organization";
 import {
   connectMetaAction,
+  connectMetaAdAccountAction,
   createGoogleFormAction,
   disconnectAction,
   mapFormAction,
@@ -101,10 +103,32 @@ export default async function IntegrationDetailPage({
     });
   }
 
+  async function connectAdAccount(formData: FormData) {
+    "use server";
+    const input = {
+      adAccountId: str(formData, "adAccountId"),
+      displayName: str(formData, "displayName"),
+      token: str(formData, "token"),
+    };
+    const result = await connectMetaAdAccountAction(input);
+    if (result.ok) back(id, { ok: "Cuenta publicitaria conectada" });
+    // Prefixed `a_` so its errors never land on the Page form; the token is never echoed back.
+    const fields = Object.fromEntries(
+      Object.entries(result.error.fields ?? {}).map(([k, v]) => [`a_${k}`, v]),
+    );
+    back(id, {
+      a_adAccountIdValue: input.adAccountId,
+      a_displayNameValue: input.displayName,
+      ...fields,
+      ...(result.error.fields ? {} : { error: result.error.message }),
+    });
+  }
+
   async function disconnect(formData: FormData) {
     "use server";
     const result = await disconnectAction({ accountId: str(formData, "accountId") });
-    back(id, result.ok ? { ok: "Página desconectada" } : { error: result.error.message });
+    const done = str(formData, "kind") === "ad_account" ? "Cuenta publicitaria" : "Página";
+    back(id, result.ok ? { ok: `${done} desconectada` } : { error: result.error.message });
   }
 
   async function mapForm(formData: FormData) {
@@ -163,7 +187,7 @@ export default async function IntegrationDetailPage({
 
       {integration.connection === "meta_page" ? (
         <MetaSettings
-          accounts={accounts.filter((a) => a.provider === "meta")}
+          accounts={accounts.filter((a) => a.provider === "meta" && a.accountType === "page")}
           connectAction={connect}
           disconnectAction={disconnect}
           fieldErrors={{
@@ -172,6 +196,21 @@ export default async function IntegrationDetailPage({
             pageToken: query.f_pageToken,
           }}
           values={{ pageId: query.pageId, displayName: query.displayName }}
+          now={now}
+        />
+      ) : null}
+
+      {integration.connection === "meta_page" ? (
+        <MetaAdAccounts
+          accounts={accounts.filter((a) => a.provider === "meta" && a.accountType === "ad_account")}
+          connectAction={connectAdAccount}
+          disconnectAction={disconnect}
+          fieldErrors={{
+            adAccountId: query.a_adAccountId,
+            displayName: query.a_displayName,
+            token: query.a_token,
+          }}
+          values={{ adAccountId: query.a_adAccountIdValue, displayName: query.a_displayNameValue }}
           now={now}
         />
       ) : null}

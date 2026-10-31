@@ -9,6 +9,7 @@ import {
   KanbanSquare,
   LayoutTemplate,
   type LucideIcon,
+  Megaphone,
   Plug,
   Settings,
   UserRound,
@@ -37,6 +38,7 @@ const navItems: NavItem[] = [
   { label: "Contactos", href: "/contactos", permission: "accounts.read", icon: UserRound },
   { label: "Catálogo", href: "/catalogo", permission: "catalog.read", icon: BookOpen },
   { label: "Landings", href: "/landings", permission: "landings.write", icon: LayoutTemplate },
+  { label: "Campañas", href: "/campanas", permission: "campaigns.write", icon: Megaphone },
   {
     label: "Integraciones",
     href: "/configuracion/integraciones",

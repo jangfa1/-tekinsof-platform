@@ -38,16 +38,66 @@ export async function connectMetaPage(
   const parsed = connectMetaInput.safeParse(input);
   if (!parsed.success) return validationError(parsed.error);
   const { pageId, displayName, pageToken } = parsed.data;
-  const sealed = encryptSecret(pageToken, deps.encryptionKey);
+  return saveMetaAccount(db, actor, deps, {
+    accountType: "page",
+    externalAccountId: pageId,
+    displayName,
+    token: pageToken,
+  });
+}
+
+const connectAdAccountInput = z.object({
+  adAccountId: z
+    .string()
+    .trim()
+    .transform((value) => value.replace(/^act_/i, ""))
+    .pipe(z.string().regex(/^\d{5,30}$/, "El ID de la cuenta publicitaria solo tiene números")),
+  displayName: z.string().trim().min(1, "Escribe el nombre de la cuenta").max(120),
+  token: connectMetaInput.shape.pageToken,
+});
+
+// The ad account (`act_…`) whose spend the `spend-sync` cron reads; its token needs `ads_read`.
+export async function connectMetaAdAccount(
+  db: DbOrTx,
+  actor: Actor,
+  deps: IntegrationDeps,
+  input: z.input<typeof connectAdAccountInput>,
+): Promise<Result<{ accountId: string }>> {
+  if (!can(actor, "integrations.manage")) return err("FORBIDDEN", "No tienes permiso");
+  const parsed = connectAdAccountInput.safeParse(input);
+  if (!parsed.success) return validationError(parsed.error);
+  const { adAccountId, displayName, token } = parsed.data;
+  return saveMetaAccount(db, actor, deps, {
+    accountType: "ad_account",
+    externalAccountId: adAccountId,
+    displayName,
+    token,
+  });
+}
+
+async function saveMetaAccount(
+  db: DbOrTx,
+  actor: Actor,
+  deps: IntegrationDeps,
+  account: {
+    accountType: "page" | "ad_account";
+    externalAccountId: string;
+    displayName: string;
+    token: string;
+  },
+): Promise<Result<{ accountId: string }>> {
+  const { accountType, externalAccountId, displayName } = account;
+  const sealed = encryptSecret(account.token, deps.encryptionKey);
 
   return db.transaction(async (tx) => {
-    // Reconnecting the same Page (a new token, or after a disconnect) updates the row in place.
+    // Reconnecting the same account (a new token, or after a disconnect) updates the row in place.
     const [row] = await tx
       .insert(integrationAccounts)
       .values({
         organizationId: deps.organizationId,
         provider: "meta",
-        externalAccountId: pageId,
+        accountType,
+        externalAccountId,
         displayName,
         credentialsEncrypted: sealed,
         connectedBy: actor.id,
@@ -59,6 +109,7 @@ export async function connectMetaPage(
           integrationAccounts.externalAccountId,
         ],
         set: {
+          accountType,
           displayName,
           credentialsEncrypted: sealed,
           status: "conectada",
@@ -74,7 +125,7 @@ export async function connectMetaPage(
       action: "integration.connected",
       targetType: "integration_account",
       targetId: row.id,
-      metadata: { provider: "meta", externalAccountId: pageId, displayName },
+      metadata: { provider: "meta", accountType, externalAccountId, displayName },
     });
     return ok({ accountId: row.id });
   });
@@ -124,6 +175,7 @@ export async function disconnectAccount(
 export type AccountRow = {
   id: string;
   provider: string;
+  accountType: string;
   externalAccountId: string;
   displayName: string;
   status: string;
@@ -139,6 +191,7 @@ export function listAccounts(db: DbOrTx, organizationId: string): Promise<Accoun
     .select({
       id: integrationAccounts.id,
       provider: integrationAccounts.provider,
+      accountType: integrationAccounts.accountType,
       externalAccountId: integrationAccounts.externalAccountId,
       displayName: integrationAccounts.displayName,
       status: integrationAccounts.status,

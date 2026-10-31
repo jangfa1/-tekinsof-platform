@@ -1,8 +1,7 @@
 import { and, eq, lt } from "drizzle-orm";
-import { writeAudit } from "../audit/audit.ts";
 import type { DbOrTx } from "../db/client.ts";
-import { adForms, inboundEvents, integrationAccounts, users } from "../db/schema.ts";
-import { escapeHtml, type Mailer } from "../integrations/graph.ts";
+import { adForms, inboundEvents, integrationAccounts } from "../db/schema.ts";
+import type { Mailer } from "../integrations/graph.ts";
 import {
   fetchFormLeads,
   fetchPageForms,
@@ -11,6 +10,7 @@ import {
   toExternalLead,
 } from "../integrations/meta.ts";
 import { decryptSecret } from "../integrations/secrets.ts";
+import { markMetaTokenExpired } from "../integrations/token-alerts.ts";
 import { ok, type Result } from "../result.ts";
 import { ingestExternalLead } from "./external-leads.ts";
 
@@ -45,53 +45,6 @@ const RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 type Account = { id: string; externalAccountId: string; displayName: string; token: string };
 type FormRow = { name: string; fieldMapping: unknown; isActive: boolean };
 
-async function markExpired(
-  db: DbOrTx,
-  deps: BackfillDeps,
-  account: Pick<Account, "id" | "displayName" | "externalAccountId">,
-  message: string,
-): Promise<void> {
-  const flipped = await db.transaction(async (tx) => {
-    const rows = await tx
-      .update(integrationAccounts)
-      .set({ status: "expirada", lastError: message })
-      .where(
-        and(eq(integrationAccounts.id, account.id), eq(integrationAccounts.status, "conectada")),
-      )
-      .returning({ id: integrationAccounts.id });
-    if (rows.length === 0) return false;
-    await writeAudit(tx, {
-      actorId: null,
-      action: "integration.token_expired",
-      targetType: "integration_account",
-      targetId: account.id,
-      metadata: { provider: "meta", pageId: account.externalAccountId },
-    });
-    return true;
-  });
-  // Another run already flipped it and sent the alert.
-  if (!flipped) return;
-
-  const managers = await db
-    .select({ email: users.email })
-    .from(users)
-    .where(and(eq(users.role, "gerencia"), eq(users.isActive, true)));
-  const link = `${deps.crmBaseUrl}/configuracion/integraciones/facebook`;
-  const html = [
-    `<p>El token de la Página <strong>${escapeHtml(account.displayName)}</strong> venció o fue revocado.</p>`,
-    "<p>Mientras no se reconecte, los leads de Facebook e Instagram de esa Página no llegarán al CRM.</p>",
-    `<p><a href="${escapeHtml(link)}">Reconectar la Página</a> con un token nuevo del usuario del sistema.</p>`,
-  ].join("");
-  for (const { email } of managers) {
-    await deps.mailer.send({
-      from: deps.systemSender,
-      to: [email],
-      subject: `Token de Meta vencido: ${account.displayName}`,
-      html,
-    });
-  }
-}
-
 async function backfillAccount(
   db: DbOrTx,
   deps: BackfillDeps,
@@ -102,7 +55,7 @@ async function backfillAccount(
 ): Promise<void> {
   const fail = async (error: { message: string; fields?: Record<string, string> }) => {
     if (isExpiredTokenError(error)) {
-      await markExpired(db, deps, account, error.message);
+      await markMetaTokenExpired(db, deps, { ...account, accountType: "page" }, error.message);
       summary.expired++;
     } else {
       await db
@@ -166,7 +119,11 @@ export async function metaLeadsBackfill(
     })
     .from(integrationAccounts)
     .where(
-      and(eq(integrationAccounts.provider, "meta"), eq(integrationAccounts.status, "conectada")),
+      and(
+        eq(integrationAccounts.provider, "meta"),
+        eq(integrationAccounts.accountType, "page"),
+        eq(integrationAccounts.status, "conectada"),
+      ),
     );
   const formRows = await db
     .select({

@@ -71,11 +71,15 @@ export type MetaLead = z.infer<typeof metaLeadSchema>;
 
 const leadFields = "id,created_time,ad_id,adset_id,campaign_id,form_id,field_data,platform";
 
-const GRAPH_ORIGIN = "https://graph.facebook.com/";
+export const GRAPH_ORIGIN = "https://graph.facebook.com/";
 
 // The token travels in the Authorization header so it never lands in URL logs. Errors carry
 // `fields.graphCode` (Graph's error code, or the HTTP status when there is none).
-async function graphGet(deps: MetaDeps, url: string, token: string): Promise<Result<unknown>> {
+export async function graphGet(
+  deps: MetaDeps,
+  url: string,
+  token: string,
+): Promise<Result<unknown>> {
   let body: unknown;
   let status: number;
   try {
@@ -108,7 +112,7 @@ const page = <T extends z.ZodType>(item: T) =>
   });
 
 // Follows `paging.next` (only back to Graph itself) up to MAX_PAGES pages.
-async function graphList<T extends z.ZodType>(
+export async function graphList<T extends z.ZodType>(
   deps: MetaDeps,
   firstUrl: string,
   token: string,

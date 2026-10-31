@@ -288,7 +288,7 @@
       "pnpm test"
     ],
     "checkpoint": "r2-step-10-campaign-spend",
-    "status": "todo"
+    "status": "done"
   },
   {
     "id": "r2-11",

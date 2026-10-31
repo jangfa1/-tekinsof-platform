@@ -681,6 +681,8 @@ export const integrationAccounts = pgTable(
     id: uuid().primaryKey().defaultRandom(),
     organizationId: organizationId(),
     provider: text().notNull(),
+    // `page` receives leads (Meta Page); `ad_account` reports spend (Meta `act_…`).
+    accountType: text().notNull().default("page"),
     externalAccountId: text().notNull(),
     displayName: text().notNull(),
     status: text().notNull().default("conectada"),
@@ -701,6 +703,7 @@ export const integrationAccounts = pgTable(
       t.externalAccountId,
     ),
     check("ck_integration_accounts_provider", sql`${t.provider} in ${adProviders}`),
+    check("ck_integration_accounts_type", sql`${t.accountType} in ('page','ad_account')`),
     check(
       "ck_integration_accounts_status",
       sql`${t.status} in ('conectada','expirada','revocada','error')`,
@@ -767,10 +770,13 @@ export const campaignSpendDaily = pgTable(
   {
     id: uuid().primaryKey().defaultRandom(),
     organizationId: organizationId(),
-    campaignId: uuid()
-      .notNull()
-      .references(() => campaigns.id, { onDelete: "cascade" }),
+    // Null while a synced platform campaign is not mapped to a CRM campaign: the spend is kept
+    // and attached when Marketing maps it (campaigns.external_refs), so no day is lost.
+    campaignId: uuid().references(() => campaigns.id, { onDelete: "cascade" }),
     provider: text().notNull(),
+    adPlatform: text().notNull(),
+    externalCampaignId: text(),
+    externalCampaignName: text(),
     date: date({ mode: "string" }).notNull(),
     spendCents: bigint({ mode: "number" }).notNull(),
     currency: text().notNull().default("PEN"),
@@ -781,10 +787,25 @@ export const campaignSpendDaily = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
-    uniqueIndex("uq_campaign_spend_daily").on(t.campaignId, t.provider, t.date),
+    // Manual rows: one per campaign, platform and day. Synced rows: one per platform campaign.
+    uniqueIndex("uq_campaign_spend_daily")
+      .on(t.campaignId, t.provider, t.adPlatform, t.date)
+      .where(sql`${t.externalCampaignId} is null`),
+    uniqueIndex("uq_campaign_spend_daily_external")
+      .on(t.provider, t.externalCampaignId, t.adPlatform, t.date)
+      .where(sql`${t.externalCampaignId} is not null`),
+    index("idx_campaign_spend_daily_date").on(t.date, t.campaignId),
     check(
       "ck_campaign_spend_daily_provider",
       sql`${t.provider} in ('meta','tiktok','google_ads','manual')`,
+    ),
+    check(
+      "ck_campaign_spend_daily_platform",
+      sql`${t.adPlatform} in ('facebook','instagram','google','tiktok','otra')`,
+    ),
+    check(
+      "ck_campaign_spend_daily_owner",
+      sql`${t.campaignId} is not null or ${t.externalCampaignId} is not null`,
     ),
     check("ck_campaign_spend_daily_amount", sql`${t.spendCents} >= 0`),
     check("ck_campaign_spend_daily_currency", sql`${t.currency} in ('PEN','USD')`),

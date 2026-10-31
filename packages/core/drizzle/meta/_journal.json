@@ -22,6 +22,13 @@
       "when": 1793390870213,
       "tag": "0002_green_veda",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793463857165,
+      "tag": "0003_black_shooting_star",
+      "breakpoints": true
     }
   ]
 }

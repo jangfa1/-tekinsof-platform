@@ -195,7 +195,10 @@ export async function integrationOverview(
     listAccounts(db, input.organizationId),
     googleSetup(db, input.organizationId),
   ]);
-  const metaAccounts = accounts.filter((a) => a.provider === "meta" && a.status !== "revocada");
+  // Ad accounts report spend, not leads: the Facebook and Instagram cards are about the Pages.
+  const metaAccounts = accounts.filter(
+    (a) => a.provider === "meta" && a.accountType === "page" && a.status !== "revocada",
+  );
   const primary = metaAccounts.find((a) => a.status === "conectada") ?? metaAccounts[0] ?? null;
 
   return activeIntegrations.map((integration) => {
