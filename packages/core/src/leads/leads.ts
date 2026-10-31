@@ -185,6 +185,7 @@ export type LeadFilters = {
   ownerId?: string;
   source?: string;
   campaignId?: string;
+  grade?: string;
   page?: number;
 };
 
@@ -202,6 +203,7 @@ export async function listLeads(db: DbOrTx, filters: LeadFilters) {
     filters.ownerId ? eq(leads.ownerId, filters.ownerId) : undefined,
     filters.source ? eq(leads.source, filters.source) : undefined,
     filters.campaignId ? eq(leads.campaignId, filters.campaignId) : undefined,
+    filters.grade ? eq(leads.grade, filters.grade) : undefined,
   );
   const page = Math.max(1, Math.floor(filters.page ?? 1));
   const [rows, [total]] = await Promise.all([

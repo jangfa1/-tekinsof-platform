@@ -5,6 +5,7 @@ import {
   BookOpen,
   Building2,
   FileText,
+  Gauge,
   KanbanSquare,
   LayoutTemplate,
   type LucideIcon,
@@ -41,6 +42,12 @@ const navItems: NavItem[] = [
     href: "/configuracion/integraciones",
     permission: "integrations.manage",
     icon: Plug,
+  },
+  {
+    label: "Calificación",
+    href: "/configuracion/calificacion",
+    permission: "settings.manage",
+    icon: Gauge,
   },
   {
     label: "Usuarios",
