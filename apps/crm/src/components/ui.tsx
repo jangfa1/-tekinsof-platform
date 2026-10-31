@@ -166,7 +166,13 @@ export function Table<T>({
   rowKey: (row: T) => string;
 }) {
   return (
-    <div className="overflow-x-auto rounded-[var(--radius-card)] border border-border">
+    // Focusable so a keyboard user can scroll a table wider than the screen (axe
+    // scrollable-region-focusable); the global :focus-visible ring marks it.
+    <div
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region must be reachable by keyboard.
+      tabIndex={0}
+      className="overflow-x-auto rounded-[var(--radius-card)] border border-border"
+    >
       <table className="w-full border-collapse text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead className="bg-surface">
@@ -191,7 +197,10 @@ export function Table<T>({
               {columns.map((column) => (
                 <td
                   key={column.key}
-                  className={cx("px-4 py-2", column.numeric && "text-right tabular-nums")}
+                  className={cx(
+                    "px-4 py-2",
+                    column.numeric && "whitespace-nowrap text-right tabular-nums",
+                  )}
                 >
                   {column.render(row)}
                 </td>

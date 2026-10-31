@@ -96,9 +96,11 @@ export function highlights(byPlatform: Row[], byCampaign: Row[]): Highlights {
     mostOpportunities: best(paid, (m) => positive(m.opportunities)),
     mostWon: best(paid, (m) => positive(m.won)),
     bestCpl: best(paid, (m) => m.cplCents, true),
-    bestConversion: best(paid, (m) => (m.leads > 0 ? m.conversionBp : null)),
-    // Return on spend when there is spend; otherwise the conversion of campaigns with leads.
+    // Without a single sale nobody "converts best" or "performs best": no winner is named.
+    bestConversion: best(paid, (m) => (m.won > 0 ? m.conversionBp : null)),
+    // Return on spend among campaigns with sales; without spend, their conversion.
     bestCampaign:
-      best(ranked, (m) => m.roiBp) ?? best(ranked, (m) => (m.leads > 0 ? m.conversionBp : null)),
+      best(ranked, (m) => (m.won > 0 ? m.roiBp : null)) ??
+      best(ranked, (m) => (m.won > 0 ? m.conversionBp : null)),
   };
 }

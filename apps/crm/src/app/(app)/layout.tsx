@@ -2,6 +2,7 @@ import type { Permission } from "@tekinsof/core/auth/permissions";
 import { can } from "@tekinsof/core/auth/permissions";
 import { findActiveIntegration } from "@tekinsof/core/integrations/catalog";
 import {
+  BarChart3,
   BookOpen,
   Building2,
   FileText,
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
   { label: "Catálogo", href: "/catalogo", permission: "catalog.read", icon: BookOpen },
   { label: "Landings", href: "/landings", permission: "landings.write", icon: LayoutTemplate },
   { label: "Campañas", href: "/campanas", permission: "campaigns.write", icon: Megaphone },
+  { label: "Marketing", href: "/marketing", permission: "dashboard.marketing", icon: BarChart3 },
   {
     label: "Integraciones",
     href: "/configuracion/integraciones",

@@ -163,6 +163,11 @@ describe("métricas puras", () => {
       spendCents: 0,
     });
     expect(metrics).toMatchObject({ cplCents: null, cpoCents: null, roasBp: null, roiBp: null });
+    // Leads without recorded spend: the cost is unknown, never S/ 0.
+    expect(withMetrics({ ...metrics, leads: 3, opportunities: 1 })).toMatchObject({
+      cplCents: null,
+      cpoCents: null,
+    });
   });
 });
 
@@ -171,6 +176,15 @@ describe("getMarketingDashboard", () => {
     const data = await dashboard();
     const row = data.byCampaign.find((r) => r.key === ids.cpl);
     expect(row?.metrics).toMatchObject({ leads: 4, spendCents: 10000, cplCents: 2500 });
+  });
+
+  it("sin ventas no nombra la mejor conversión ni la mejor campaña", async () => {
+    const data = await dashboard({ campaignId: ids.cpl ?? "" });
+    expect(data.highlights).toMatchObject({
+      mostLeads: "google",
+      bestConversion: null,
+      bestCampaign: null,
+    });
   });
 
   it("un lead de prueba no cuenta en ningún lado", async () => {

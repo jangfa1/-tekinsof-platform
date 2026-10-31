@@ -21,8 +21,9 @@ export function toPen(cents: number, currency: string, rate: number): number {
   return currency === "USD" ? divRound(cents * rate, 10000) : cents;
 }
 
+// No spend recorded means "unknown", not "free": a cost per lead of S/ 0 would win every ranking.
 const per = (amount: number | null, count: number) =>
-  amount === null || count === 0 ? null : divRound(amount, count);
+  amount === null || amount <= 0 || count === 0 ? null : divRound(amount, count);
 const bp = (part: number, whole: number) => (whole === 0 ? null : divRound(part * 10000, whole));
 
 export type Counts = {

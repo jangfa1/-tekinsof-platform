@@ -333,6 +333,6 @@
       "pnpm test"
     ],
     "checkpoint": "r2-step-12-dashboard-ui",
-    "status": "todo"
+    "status": "done"
   }
 ]
