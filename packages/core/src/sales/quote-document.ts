@@ -201,3 +201,14 @@ export async function updateUserSignature(
     return ok({ userId });
   });
 }
+
+export async function getUserSignature(
+  db: DbOrTx,
+  userId: string,
+): Promise<{ jobTitle: string | null; phone: string | null } | null> {
+  const [row] = await db
+    .select({ jobTitle: users.jobTitle, phone: users.phone })
+    .from(users)
+    .where(eq(users.id, userId));
+  return row ?? null;
+}

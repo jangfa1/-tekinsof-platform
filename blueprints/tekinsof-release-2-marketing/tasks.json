@@ -381,6 +381,6 @@
       "pnpm test"
     ],
     "checkpoint": "q-step-02-quote-document-ui",
-    "status": "pending"
+    "status": "done"
   }
 ]
