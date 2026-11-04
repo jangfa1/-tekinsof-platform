@@ -357,7 +357,7 @@
       "pnpm test"
     ],
     "checkpoint": "q-step-01-quote-document-core",
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": "q-02",
