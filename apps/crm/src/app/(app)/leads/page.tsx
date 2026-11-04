@@ -1,7 +1,10 @@
 import { getDb } from "@tekinsof/core/db/client";
-import { type LeadFilters, leadStatuses, listLeads } from "@tekinsof/core/leads/leads";
+import { type LeadFilters, listLeads } from "@tekinsof/core/leads/leads";
+import { leadStatuses } from "@tekinsof/core/leads/schemas";
+import { grades } from "@tekinsof/core/scoring/options";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { GradeBadge, gradeLabels } from "@/components/scoring/score-card";
 import { Badge, Button, EmptyState, Pagination, Select, Table } from "@/components/ui";
 import { requirePermissionPage } from "@/lib/actor";
 
@@ -39,7 +42,13 @@ const dateTime = new Intl.DateTimeFormat("es-PE", {
   timeStyle: "short",
 });
 
-type SearchParams = Promise<{ estado?: string; dueno?: string; origen?: string; page?: string }>;
+type SearchParams = Promise<{
+  estado?: string;
+  dueno?: string;
+  origen?: string;
+  grado?: string;
+  page?: string;
+}>;
 
 type LeadRow = Awaited<ReturnType<typeof listLeads>>["rows"][number];
 
@@ -51,10 +60,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: Search
     status: leadStatuses.includes(params.estado as never) ? params.estado : undefined,
     ownerId: params.dueno === "mios" ? actor.id : undefined,
     source: params.origen && params.origen in sourceLabels ? params.origen : undefined,
+    grade: grades.includes(params.grado as never) ? params.grado : undefined,
     page,
   };
   const { rows, pageCount } = await listLeads(getDb(), filters);
-  const filtered = Boolean(filters.status || filters.ownerId || filters.source);
+  const filtered = Boolean(filters.status || filters.ownerId || filters.source || filters.grade);
 
   return (
     <div className="space-y-6">
@@ -104,6 +114,19 @@ export default async function LeadsPage({ searchParams }: { searchParams: Search
             ))}
           </Select>
         </div>
+        <div>
+          <label htmlFor="grado" className="block text-sm font-medium">
+            Calificación
+          </label>
+          <Select id="grado" name="grado" defaultValue={params.grado ?? ""}>
+            <option value="">Todas</option>
+            {grades.map((grade) => (
+              <option key={grade} value={grade}>
+                {gradeLabels[grade]}
+              </option>
+            ))}
+          </Select>
+        </div>
         <Button type="submit" variant="ghost">
           Filtrar
         </Button>
@@ -133,6 +156,11 @@ export default async function LeadsPage({ searchParams }: { searchParams: Search
               ),
             },
             { key: "company", label: "Empresa", render: (row) => row.companyName ?? "—" },
+            {
+              key: "grade",
+              label: "Calificación",
+              render: (row) => <GradeBadge grade={row.grade} />,
+            },
             {
               key: "source",
               label: "Origen",
@@ -174,7 +202,12 @@ export default async function LeadsPage({ searchParams }: { searchParams: Search
       <Pagination
         page={page}
         pageCount={pageCount}
-        params={{ estado: params.estado, dueno: params.dueno, origen: params.origen }}
+        params={{
+          estado: params.estado,
+          dueno: params.dueno,
+          origen: params.origen,
+          grado: params.grado,
+        }}
       />
     </div>
   );

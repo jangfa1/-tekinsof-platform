@@ -1,0 +1,386 @@
+[
+  {
+    "id": "r2-01",
+    "title": "Foundation schema",
+    "dependencies": [],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `pnpm --filter @tekinsof/core test test/schema-r2.test.ts` runs THE SYSTEM SHALL find the tables `organizations`, `integration_accounts`, `inbound_events`, `ad_forms` and `campaign_spend_daily` after applying every migration to an in-memory PGlite.",
+      "WHEN the same test inspects `information_schema.columns` THE SYSTEM SHALL find a non-null `organization_id` column on every table in its `businessTables` array, and a row inserted into `leads` without it SHALL get `DEFAULT_ORGANIZATION_ID`.",
+      "WHEN a `leads` row with `source = 'meta_lead_ads'` and no `consent_at` is inserted THE SYSTEM SHALL reject it with a check-constraint error.",
+      "WHEN two `leads` rows share `source = 'google_lead_form'` and the same `external_lead_id` THE SYSTEM SHALL reject the second with a unique violation, and two rows with null `external_lead_id` SHALL both be accepted.",
+      "WHEN `pnpm db:migrate` runs twice and `pnpm db:seed` runs twice against `.data/dev` THE SYSTEM SHALL exit 0 every time."
+    ],
+    "verify": [
+      "pnpm db:generate",
+      "pnpm --filter @tekinsof/core test test/schema-r2.test.ts",
+      "pnpm --filter @tekinsof/core test test/schema.test.ts",
+      "pnpm db:migrate",
+      "pnpm db:migrate",
+      "pnpm db:seed",
+      "pnpm db:seed",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-01-foundation-schema",
+    "status": "done"
+  },
+  {
+    "id": "r2-02",
+    "title": "Capture core",
+    "dependencies": [
+      "r2-01"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a secret is encrypted and decrypted with the same key THE SYSTEM SHALL return the original text, and decrypting with another key or a tampered envelope SHALL return `{ ok: false }` instead of throwing.",
+      "WHEN `recordInboundEvent` is called twice with the same provider and external id THE SYSTEM SHALL keep one `inbound_events` row and one `inbound/received` outbox row, and report `duplicate: true` the second time.",
+      "WHEN `ingestExternalLead` receives a Meta lead whose external campaign id is listed in a campaign's `external_refs.meta` THE SYSTEM SHALL create one lead with that `campaign_id`, `source = 'meta_lead_ads'`, a non-null `consent_at` and one `lead/created` outbox row.",
+      "WHEN the same external lead is ingested again THE SYSTEM SHALL return the first `leadId` with `duplicate: true` and write no new lead or outbox row.",
+      "WHEN a lead has `isTest = true` THE SYSTEM SHALL store it with `is_test = true` and write no `lead/created` outbox row.",
+      "WHEN a lead has neither email nor phone THE SYSTEM SHALL return `VALIDATION_ERROR` and write nothing."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/secrets.test.ts",
+      "pnpm --filter @tekinsof/core test test/external-leads.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-02-capture-core",
+    "status": "done"
+  },
+  {
+    "id": "r2-03",
+    "title": "Meta adapter (Facebook + Instagram)",
+    "dependencies": [
+      "r2-02"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `verifyMetaSignature` receives the HMAC of the exact raw body THE SYSTEM SHALL return true, and SHALL return false for a one-byte change in the body, a wrong secret or a missing header.",
+      "WHEN `parseLeadgenWebhook` receives a payload with one `leadgen` change and one `feed` change THE SYSTEM SHALL return exactly the `leadgen` notification.",
+      "WHEN `processInbound` handles a Meta event whose fetched lead has `platform = \"ig\"` THE SYSTEM SHALL create a lead with `ad_platform = 'instagram'`, `source = 'meta_lead_ads'` and mark the inbound event `procesado`.",
+      "WHEN the fetched lead carries an unmapped question THE SYSTEM SHALL store it under `raw_answers` with the question key.",
+      "WHEN the Graph API answers 400 THE SYSTEM SHALL mark the inbound event `error` with the Graph message and return an error `Result` so Inngest retries.",
+      "WHEN the Page has no connected `integration_accounts` row THE SYSTEM SHALL mark the event `ignorado` and create no lead."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/meta.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-03-meta-adapter",
+    "status": "done"
+  },
+  {
+    "id": "r2-04",
+    "title": "Meta webhook",
+    "dependencies": [
+      "r2-03"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `GET /api/webhooks/meta?hub.mode=subscribe&hub.verify_token=<META_VERIFY_TOKEN>&hub.challenge=12345` is requested THE SYSTEM SHALL respond 200 with body `12345`, and with a wrong token SHALL respond 403.",
+      "WHEN a `POST` arrives without `X-Hub-Signature-256` or with a wrong one THE SYSTEM SHALL respond 401 and store no `inbound_events` row.",
+      "WHEN a correctly signed `leadgen` payload is posted THE SYSTEM SHALL respond 200 with `data.duplicate = false`, and posting it again SHALL respond 200 with `data.duplicate = true`.",
+      "WHEN `parseEnv` receives `VERCEL_ENV=production` without `META_APP_SECRET` THE SYSTEM SHALL throw an error whose message contains `META_APP_SECRET`."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/webhooks-meta.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-04-meta-webhook",
+    "status": "done"
+  },
+  {
+    "id": "r2-05",
+    "title": "Google Lead Forms",
+    "dependencies": [
+      "r2-04"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN `parseGoogleLead` receives a body with `FULL_NAME`, `EMAIL`, `PHONE_NUMBER` and an unknown column THE SYSTEM SHALL map the three to lead fields and keep the unknown one under `rawAnswers`.",
+      "WHEN the webhook receives a body whose `google_key` differs from the form's key THE SYSTEM SHALL respond 401 and store nothing.",
+      "WHEN the webhook receives a valid body for an unknown `adFormId` THE SYSTEM SHALL respond 404.",
+      "WHEN a valid lead is posted and `processInbound` runs THE SYSTEM SHALL create a lead with `source = 'google_lead_form'`, `ad_platform = 'google'` and `gclid` set from `gcl_id`.",
+      "WHEN the body has `is_test = true` THE SYSTEM SHALL store the lead with `is_test = true` and write no `lead/created` outbox row."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/google-leads.test.ts",
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/webhooks-google.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-05-google-lead-forms",
+    "status": "done"
+  },
+  {
+    "id": "r2-06",
+    "title": "TikTok Lead Ads",
+    "dependencies": [
+      "r2-04"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a body signed with `TIKTOK_WEBHOOK_SECRET` is posted THE SYSTEM SHALL respond 200, and an unsigned or wrongly signed body SHALL get 401.",
+      "WHEN `processInbound` handles a TikTok event THE SYSTEM SHALL create a lead with `source = 'tiktok_lead_ads'` and `ad_platform = 'tiktok'`, and unknown `fields` keys SHALL land in `raw_answers`.",
+      "WHEN the same `lead_id` is posted twice THE SYSTEM SHALL keep one lead."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/tiktok.test.ts",
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/webhooks-tiktok.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-06-tiktok-leads",
+    "status": "done"
+  },
+  {
+    "id": "r2-07",
+    "title": "Integrations UI",
+    "dependencies": [
+      "r2-05",
+      "r2-06"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a `gerencia` user connects a Meta Page with a token THE SYSTEM SHALL store `credentials_encrypted` that does not contain the token text, list the account as `conectada` and write an `integration.connected` audit event.",
+      "WHEN a `marketing` or `ventas` user opens `/configuracion/integraciones` THE SYSTEM SHALL respond 404.",
+      "WHEN a Google ad form is created THE SYSTEM SHALL show its webhook URL and key once, and reloading the page SHALL not show the key again.",
+      "WHEN the page is scanned with axe THE SYSTEM SHALL report zero violations."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/permissions.test.ts",
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/integrations.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-07-integrations-ui",
+    "status": "done"
+  },
+  {
+    "id": "r2-08",
+    "title": "Meta backfill and token health",
+    "dependencies": [
+      "r2-07"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN the backfill finds a lead that the webhook already delivered THE SYSTEM SHALL create no second lead.",
+      "WHEN the backfill finds a lead the webhook missed THE SYSTEM SHALL create it with `source = 'meta_lead_ads'`.",
+      "WHEN Graph answers with an expired-token error THE SYSTEM SHALL set the account `status = 'expirada'` and send one mail to every active `gerencia` user, and a second run SHALL send none.",
+      "WHEN `purgeInboundEvents` runs THE SYSTEM SHALL delete events older than 90 days and keep newer ones."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/backfill.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-08-meta-backfill",
+    "status": "done"
+  },
+  {
+    "id": "r2-09",
+    "title": "Landing tracking",
+    "dependencies": [
+      "r2-01"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a public lead is created with `ttclid` THE SYSTEM SHALL store it in `leads.ttclid`.",
+      "WHEN the site is built with `PUBLIC_TIKTOK_PIXEL_ID=TESTPIXEL` THE SYSTEM SHALL emit `TESTPIXEL` in `dist/index.html` only inside the consent-gated loader.",
+      "WHEN `apps/web/src/components/LeadForm.tsx` is measured THE SYSTEM SHALL count at most 300 lines."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/leads.test.ts",
+      "PUBLIC_TIKTOK_PIXEL_ID=TESTPIXEL pnpm --filter @tekinsof/web build",
+      "grep -q \"TESTPIXEL\" apps/web/dist/index.html",
+      "test \"$(wc -l < apps/web/src/components/LeadForm.tsx)\" -le 300",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-09-landing-tracking",
+    "status": "done"
+  },
+  {
+    "id": "r2-09a",
+    "title": "Lead scoring core",
+    "dependencies": [
+      "r2-09"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN a lead has every signal at its best value THE SYSTEM SHALL score it 100 with grade `A`, and the same lead without budget and company size SHALL drop to grade `B` with reasons that say \"no indicado\".",
+      "WHEN `handleLeadCreated` runs twice for the same lead THE SYSTEM SHALL store exactly one `lead_scores` row and copy its score and grade to the lead.",
+      "WHEN a seller completes the qualification of a lead THE SYSTEM SHALL add a `lead_scores` row and `leads.grade` SHALL reflect the latest one; another seller SHALL get `FORBIDDEN`.",
+      "WHEN an ad platform test lead is scored THE SYSTEM SHALL skip it.",
+      "WHEN an ad form answers \"Más de 200\" to a company size question THE SYSTEM SHALL store `company_size = '201+'`.",
+      "WHEN a `ventas` user calls `rescoreAll` THE SYSTEM SHALL return `FORBIDDEN`.",
+      "WHEN `leads.ts` and `LeadForm.tsx` are measured THE SYSTEM SHALL count at most 300 lines each."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/scoring.test.ts",
+      "test \"$(wc -l < packages/core/src/leads/leads.ts)\" -le 300",
+      "test \"$(wc -l < apps/web/src/components/LeadForm.tsx)\" -le 300",
+      "pnpm --filter @tekinsof/web build",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-09a-scoring-core",
+    "status": "done"
+  },
+  {
+    "id": "r2-09b",
+    "title": "Lead scoring UI",
+    "dependencies": [
+      "r2-09a"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN a user opens `/leads?grado=A` THE SYSTEM SHALL list only grade A leads and show each lead's grade in the inbox.",
+      "WHEN a user opens a scored lead THE SYSTEM SHALL show a \"Calificación\" card with the grade, the score and one line per signal with its points and explanation.",
+      "WHEN the owner saves company size, budget and company type on the lead THE SYSTEM SHALL show the new grade.",
+      "WHEN a `ventas` user opens `/configuracion/calificacion` THE SYSTEM SHALL deny access; Gerencia SHALL see the active rules and a \"Recalificar leads\" action.",
+      "WHEN the new screens are checked with axe THE SYSTEM SHALL report no violations."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/scoring.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-09b-scoring-ui",
+    "status": "done"
+  },
+  {
+    "id": "r2-10",
+    "title": "Campaign spend",
+    "dependencies": [
+      "r2-07"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN Meta reports `spend = \"123.45\"` for a mapped campaign THE SYSTEM SHALL store `spend_cents = 12345` for that date, and a second sync of the same day SHALL update the row instead of adding one.",
+      "WHEN a `ventas` user calls `recordManualSpend` THE SYSTEM SHALL return `FORBIDDEN`.",
+      "WHEN a negative amount is recorded THE SYSTEM SHALL return `VALIDATION_ERROR`."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/spend.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-10-campaign-spend",
+    "status": "done"
+  },
+  {
+    "id": "r2-11",
+    "title": "Dashboard core",
+    "dependencies": [
+      "r2-10"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a campaign has 4 leads and 10000 céntimos of spend in range THE SYSTEM SHALL report `cplCents = 2500` for it.",
+      "WHEN a test lead (`is_test = true`) exists in range THE SYSTEM SHALL not count it anywhere.",
+      "WHEN the funnel has 10 leads, 6 contacted and 3 with an opportunity THE SYSTEM SHALL report those counts at the corresponding stages.",
+      "WHEN a `ventas` user asks for the dashboard THE SYSTEM SHALL return `FORBIDDEN`."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/dashboard.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-11-dashboard-core",
+    "status": "done"
+  },
+  {
+    "id": "r2-12",
+    "title": "Dashboard UI",
+    "dependencies": [
+      "r2-11"
+    ],
+    "priority": "p0",
+    "acceptance": [
+      "WHEN a `marketing` user opens `/marketing` THE SYSTEM SHALL show the headings \"Leads por fuente\", \"Rendimiento por campaña\" and \"Embudo comercial\".",
+      "WHEN a `ventas` user opens `/marketing` THE SYSTEM SHALL respond 404 and the navigation SHALL not show \"Marketing\".",
+      "WHEN the range has no leads THE SYSTEM SHALL show the empty state text \"Sin leads en este rango\".",
+      "WHEN the page is scanned with axe THE SYSTEM SHALL report zero violations."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/marketing.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "r2-step-12-dashboard-ui",
+    "status": "done"
+  },
+  {
+    "id": "q-01",
+    "title": "Quote document core (B2B commercial proposal PDF)",
+    "dependencies": [
+      "r2-12"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN a quote is created THE SYSTEM SHALL number it CT-<year>-<5 digits> and copy the cover letter, commercial conditions and remarks from app_settings.quote_defaults (built-in texts if unset).",
+      "WHEN items are saved THE SYSTEM SHALL store each with section producto|servicio, a type valid for that section and a part number only for products, and SHALL reject a type from the other section with VALIDATION_ERROR.",
+      "WHEN a non-draft quote's texts are edited THE SYSTEM SHALL return INVALID_TRANSITION; a new version SHALL keep the texts.",
+      "WHEN the PDF is rendered THE SYSTEM SHALL show header (mark, number, issue date, version), client data, cover letter, separate products and services tables with subtotals, an economic summary with highlighted TOTAL, commercial conditions, remarks, signature and 'Página X de Y' on every page.",
+      "WHEN a non-Gerencia user changes the quote defaults or another user's signature THE SYSTEM SHALL return FORBIDDEN."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/quote-document.test.ts",
+      "pnpm --filter @tekinsof/core test test/schema.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "q-step-01-quote-document-core",
+    "status": "done"
+  },
+  {
+    "id": "q-02",
+    "title": "Quote document UI (editor sections, conditions, defaults, signature, WhatsApp)",
+    "dependencies": [
+      "q-01"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN a seller edits a draft quote THE SYSTEM SHALL show the tables \"Productos\" and \"Servicios\" with type and part number, and a \"Condiciones comerciales\" section prefilled with the defaults.",
+      "WHEN a Gerencia user opens /configuracion/cotizaciones THE SYSTEM SHALL let them edit the default texts; other roles SHALL get 404.",
+      "WHEN a user opens /configuracion/firma THE SYSTEM SHALL let them edit their own job title and phone.",
+      "WHEN a sent or approved quote has a contact phone THE SYSTEM SHALL offer \"Enviar por WhatsApp\", which downloads the PDF and opens wa.me with a ready message; no public link is created.",
+      "WHEN the quote pages are scanned with axe THE SYSTEM SHALL report zero violations."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/quotes.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "q-step-02-quote-document-ui",
+    "status": "done"
+  }
+]

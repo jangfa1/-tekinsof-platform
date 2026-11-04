@@ -8,6 +8,41 @@
       "when": 1793124681407,
       "tag": "0000_flowery_terrax",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793337346440,
+      "tag": "0001_colossal_arachne",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793390870213,
+      "tag": "0002_green_veda",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793463857165,
+      "tag": "0003_black_shooting_star",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793465857909,
+      "tag": "0004_sweet_lizard",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793815652259,
+      "tag": "0005_swift_skaar",
+      "breakpoints": true
     }
   ]
 }

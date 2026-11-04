@@ -1,4 +1,4 @@
-// The single source of truth for every table in Release 1. Column names are snake_case in SQL and
+// The single source of truth for every table (Release 1 and Release 2). Column names are snake_case in SQL and
 // camelCase in TypeScript via `casing: "snake_case"` (drizzle.config.ts and src/db/client.ts).
 // Money is integer céntimos (bigint, mode number) + a currency column. Timestamps are timestamptz.
 import { sql } from "drizzle-orm";
@@ -27,6 +27,12 @@ const updatedAt = () =>
     .$onUpdate(() => new Date());
 const deletedAt = () => timestamp({ withTimezone: true });
 
+// Tenant-ready (Release 2): every business table carries the owning organization. Until a second
+// organization exists nothing filters by it, so the column has no FK and defaults to Tekinsof;
+// the FK, composite indexes, service filtering and RLS arrive together (design.md §3, phase F8).
+export const DEFAULT_ORGANIZATION_ID = "00000000-0000-4000-8000-000000000001";
+const organizationId = () => uuid().notNull().default(DEFAULT_ORGANIZATION_ID);
+
 // ─── Identity (Better Auth tables; property names are Better Auth's field names) ──────────────
 export const users = pgTable("users", {
   id: text().primaryKey(),
@@ -37,6 +43,9 @@ export const users = pgTable("users", {
   role: text().notNull().default("ventas"),
   isActive: boolean().notNull().default(true),
   receivesLeads: boolean().notNull().default(true),
+  /** Shown in the signature block of the quote PDF. */
+  jobTitle: text(),
+  phone: text(),
   lastAssignedAt: timestamp({ withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
@@ -106,6 +115,24 @@ export const invitations = pgTable("invitations", {
 });
 
 // ─── System ──────────────────────────────────────────────────────────────────────────────────
+export const organizations = pgTable(
+  "organizations",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    name: text().notNull(),
+    slug: text().notNull().unique(),
+    legalName: text(),
+    ruc: text(),
+    timezone: text().notNull().default("America/Lima"),
+    locale: text().notNull().default("es-PE"),
+    status: text().notNull().default("activa"),
+    settings: jsonb().notNull().default({}),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [check("ck_organizations_status", sql`${t.status} in ('activa','suspendida')`)],
+);
+
 export const appSettings = pgTable("app_settings", {
   key: text().primaryKey(),
   value: jsonb().notNull(),
@@ -156,6 +183,7 @@ export const companies = pgTable(
   "companies",
   {
     id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
     name: text().notNull(),
     ruc: text(),
     industry: text(),
@@ -181,6 +209,7 @@ export const contacts = pgTable(
   "contacts",
   {
     id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
     companyId: uuid().references(() => companies.id, { onDelete: "set null" }),
     fullName: text().notNull(),
     email: text(),
@@ -205,6 +234,7 @@ export const campaigns = pgTable(
   "campaigns",
   {
     id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
     name: text().notNull(),
     slug: text().notNull().unique(),
     channel: text().notNull(),
@@ -213,6 +243,8 @@ export const campaigns = pgTable(
     budgetCents: bigint({ mode: "number" }),
     currency: text().notNull().default("PEN"),
     isActive: boolean().notNull().default(true),
+    // Ad platform campaign ids, e.g. { "meta": ["1202…"], "google_ads": ["2134…"] }.
+    externalRefs: jsonb().notNull().default({}),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -229,6 +261,7 @@ export const leads = pgTable(
   "leads",
   {
     id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
     status: text().notNull().default("nuevo"),
     source: text().notNull(),
     campaignId: uuid().references(() => campaigns.id, { onDelete: "set null" }),
@@ -246,7 +279,22 @@ export const leads = pgTable(
     utmContent: text(),
     gclid: text(),
     fbclid: text(),
+    ttclid: text(),
     referrer: text(),
+    externalLeadId: text(),
+    adFormId: uuid().references(() => adForms.id, { onDelete: "set null" }),
+    adId: text(),
+    adsetId: text(),
+    adPlatform: text(),
+    rawAnswers: jsonb().notNull().default({}),
+    // Qualification answers and the latest grade, denormalized from lead_scores to filter the inbox.
+    companySize: text(),
+    budgetRange: text(),
+    companyType: text(),
+    score: integer(),
+    grade: text(),
+    scoredAt: timestamp({ withTimezone: true }),
+    isTest: boolean().notNull().default(false),
     consentAt: timestamp({ withTimezone: true }),
     consentVersion: text(),
     ownerId: text().references(() => users.id, { onDelete: "set null" }),
@@ -273,15 +321,120 @@ export const leads = pgTable(
       "ck_leads_status",
       sql`${t.status} in ('nuevo','contactado','calificado','descartado','convertido')`,
     ),
+    uniqueIndex("uq_leads_external")
+      .on(t.source, t.externalLeadId)
+      .where(sql`${t.externalLeadId} is not null`),
     check(
       "ck_leads_source",
-      sql`${t.source} in ('web_form','landing','whatsapp','referral','manual','event','other')`,
+      sql`${t.source} in ('web_form','landing','whatsapp','referral','manual','event','other','meta_lead_ads','tiktok_lead_ads','google_lead_form')`,
     ),
     check("ck_leads_reach", sql`${t.email} is not null or ${t.phone} is not null`),
     check(
       "ck_leads_public_consent",
-      sql`${t.source} not in ('web_form','landing') or ${t.consentAt} is not null`,
+      sql`${t.source} not in ('web_form','landing','meta_lead_ads','tiktok_lead_ads','google_lead_form') or ${t.consentAt} is not null`,
     ),
+    check(
+      "ck_leads_ad_platform",
+      sql`${t.adPlatform} is null or ${t.adPlatform} in ('facebook','instagram','tiktok','google')`,
+    ),
+    index("idx_leads_grade").on(t.grade, t.createdAt),
+    check(
+      "ck_leads_company_size",
+      sql`${t.companySize} is null or ${t.companySize} in ('1-10','11-50','51-200','201+')`,
+    ),
+    check(
+      "ck_leads_budget_range",
+      sql`${t.budgetRange} is null or ${t.budgetRange} in ('hasta-5k','5k-20k','20k-50k','mas-50k')`,
+    ),
+    check(
+      "ck_leads_company_type",
+      sql`${t.companyType} is null or ${t.companyType} in ('privada','publica','ong','independiente')`,
+    ),
+    check("ck_leads_grade", sql`${t.grade} is null or ${t.grade} in ('A','B','C','D')`),
+    check("ck_leads_score", sql`${t.score} is null or ${t.score} between 0 and 100`),
+  ],
+);
+
+// ─── Attribution: every visit that brought a prospect (design.md §8) ─────────────────────────
+
+export const leadTouchpoints = pgTable(
+  "lead_touchpoints",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+    leadId: uuid()
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    occurredAt: timestamp({ withTimezone: true }).notNull(),
+    // true for the touch that created the lead; false when the same prospect came back.
+    isConversion: boolean().notNull(),
+    source: text().notNull(),
+    adPlatform: text(),
+    campaignId: uuid().references(() => campaigns.id, { onDelete: "set null" }),
+    landingSlug: text(),
+    adFormId: uuid().references(() => adForms.id, { onDelete: "set null" }),
+    adId: text(),
+    utmSource: text(),
+    utmMedium: text(),
+    utmCampaign: text(),
+    utmTerm: text(),
+    utmContent: text(),
+    gclid: text(),
+    fbclid: text(),
+    ttclid: text(),
+    referrer: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("idx_lead_touchpoints_lead").on(t.leadId, t.occurredAt),
+    index("idx_lead_touchpoints_campaign").on(t.campaignId, t.occurredAt),
+    check(
+      "ck_lead_touchpoints_ad_platform",
+      sql`${t.adPlatform} is null or ${t.adPlatform} in ('facebook','instagram','tiktok','google')`,
+    ),
+  ],
+);
+
+// ─── Lead scoring (rule-based; design.md §4.5 without the AI layer) ──────────────────────────
+
+export const scoringModels = pgTable(
+  "scoring_models",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+    version: integer().notNull().unique(),
+    rules: jsonb().notNull(),
+    thresholds: jsonb().notNull(),
+    isActive: boolean().notNull().default(false),
+    createdBy: text().references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [uniqueIndex("uq_scoring_models_active").on(t.isActive).where(sql`${t.isActive}`)],
+);
+
+export const leadScores = pgTable(
+  "lead_scores",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+    leadId: uuid()
+      .notNull()
+      .references(() => leads.id, { onDelete: "cascade" }),
+    scoringModelVersion: integer().notNull(),
+    score: integer().notNull(),
+    grade: text().notNull(),
+    reasons: jsonb().notNull(),
+    inputs: jsonb().notNull(),
+    scoredAt: timestamp({ withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("idx_lead_scores_lead").on(t.leadId, t.scoredAt),
+    check("ck_lead_scores_grade", sql`${t.grade} in ('A','B','C','D')`),
+    check("ck_lead_scores_score", sql`${t.score} between 0 and 100`),
   ],
 );
 
@@ -290,6 +443,7 @@ export const opportunities = pgTable(
   "opportunities",
   {
     id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
     title: text().notNull(),
     stage: text().notNull().default("calificacion"),
     position: integer().notNull().default(0),
@@ -331,6 +485,7 @@ export const activities = pgTable(
   "activities",
   {
     id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
     type: text().notNull(),
     subject: text().notNull(),
     notes: text(),
@@ -368,6 +523,7 @@ export const services = pgTable(
   "services",
   {
     id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
     code: text().notNull().unique(),
     name: text().notNull(),
     slug: text().notNull().unique(),
@@ -402,6 +558,7 @@ export const quotes = pgTable(
   "quotes",
   {
     id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
     number: text().notNull(),
     version: integer().notNull().default(1),
     status: text().notNull().default("borrador"),
@@ -424,6 +581,14 @@ export const quotes = pgTable(
     validUntil: date({ mode: "string" }),
     notes: text(),
     terms: text(),
+    // Commercial document (q-01): cover letter, conditions and remarks printed on the PDF.
+    intro: text(),
+    paymentTerms: text(),
+    deliveryTime: text(),
+    warranty: text(),
+    scope: text(),
+    exclusions: text(),
+    observations: text(),
     approvedBy: text().references(() => users.id, { onDelete: "set null" }),
     approvedAt: timestamp({ withTimezone: true }),
     sentAt: timestamp({ withTimezone: true }),
@@ -454,6 +619,9 @@ export const quoteItems = pgTable(
       .notNull()
       .references(() => quotes.id, { onDelete: "cascade" }),
     serviceId: uuid().references(() => services.id, { onDelete: "set null" }),
+    section: text().notNull().default("servicio"),
+    itemType: text().notNull().default("implementacion"),
+    partNumber: text(),
     description: text().notNull(),
     quantity: numeric({ precision: 10, scale: 2 }).notNull().default("1"),
     unitPriceCents: bigint({ mode: "number" }).notNull(),
@@ -464,6 +632,12 @@ export const quoteItems = pgTable(
     index("idx_quote_items_quote").on(t.quoteId, t.sortOrder),
     check("ck_quote_items_quantity", sql`${t.quantity} > 0`),
     check("ck_quote_items_price", sql`${t.unitPriceCents} >= 0`),
+    check("ck_quote_items_section", sql`${t.section} in ('producto','servicio')`),
+    check(
+      "ck_quote_items_type",
+      sql`(${t.section} = 'producto' and ${t.itemType} in ('hardware','software','licencia','equipo','suscripcion'))
+        or (${t.section} = 'servicio' and ${t.itemType} in ('implementacion','capacitacion','soporte','consultoria','desarrollo','automatizacion'))`,
+    ),
   ],
 );
 
@@ -472,6 +646,7 @@ export const landingPages = pgTable(
   "landing_pages",
   {
     id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
     slug: text().notNull().unique(),
     title: text().notNull(),
     status: text().notNull().default("borrador"),
@@ -520,6 +695,7 @@ export const conversations = pgTable(
   "conversations",
   {
     id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
     channel: text().notNull().default("whatsapp"),
     externalId: text().notNull(),
     contactPhone: text(),
@@ -554,5 +730,145 @@ export const messages = pgTable(
   (t) => [
     index("idx_messages_conversation").on(t.conversationId, t.occurredAt),
     check("ck_messages_direction", sql`${t.direction} in ('in','out')`),
+  ],
+);
+
+// ─── Paid capture (Release 2): ad platform accounts, raw webhooks, lead forms, spend ─────────
+const adProviders = sql`('meta','tiktok','google_ads')`;
+
+export const integrationAccounts = pgTable(
+  "integration_accounts",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+    provider: text().notNull(),
+    // `page` receives leads (Meta Page); `ad_account` reports spend (Meta `act_…`).
+    accountType: text().notNull().default("page"),
+    externalAccountId: text().notNull(),
+    displayName: text().notNull(),
+    status: text().notNull().default("conectada"),
+    // AES-256-GCM envelope from integrations/secrets.ts; never plain text.
+    credentialsEncrypted: text().notNull(),
+    keyVersion: integer().notNull().default(1),
+    tokenExpiresAt: timestamp({ withTimezone: true }),
+    connectedBy: text().references(() => users.id, { onDelete: "set null" }),
+    lastOkAt: timestamp({ withTimezone: true }),
+    lastError: text(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("uq_integration_accounts_external").on(
+      t.organizationId,
+      t.provider,
+      t.externalAccountId,
+    ),
+    check("ck_integration_accounts_provider", sql`${t.provider} in ${adProviders}`),
+    check("ck_integration_accounts_type", sql`${t.accountType} in ('page','ad_account')`),
+    check(
+      "ck_integration_accounts_status",
+      sql`${t.status} in ('conectada','expirada','revocada','error')`,
+    ),
+  ],
+);
+
+// Every webhook body as received, idempotent per provider id. Purged after 90 days (personal data).
+export const inboundEvents = pgTable(
+  "inbound_events",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+    provider: text().notNull(),
+    eventType: text().notNull(),
+    externalId: text().notNull(),
+    payload: jsonb().notNull(),
+    signatureValid: boolean().notNull(),
+    status: text().notNull().default("recibido"),
+    attempts: integer().notNull().default(0),
+    error: text(),
+    receivedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    processedAt: timestamp({ withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex("uq_inbound_events_external").on(t.provider, t.externalId),
+    index("idx_inbound_events_status").on(t.status, t.receivedAt),
+    check("ck_inbound_events_provider", sql`${t.provider} in ${adProviders}`),
+    check(
+      "ck_inbound_events_status",
+      sql`${t.status} in ('recibido','procesado','ignorado','error')`,
+    ),
+  ],
+);
+
+export const adForms = pgTable(
+  "ad_forms",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+    provider: text().notNull(),
+    externalFormId: text().notNull(),
+    name: text().notNull(),
+    campaignId: uuid().references(() => campaigns.id, { onDelete: "set null" }),
+    integrationAccountId: uuid().references(() => integrationAccounts.id, {
+      onDelete: "set null",
+    }),
+    // Provider question key → lead field; overrides the adapter's defaults.
+    fieldMapping: jsonb().notNull().default({}),
+    consentText: text(),
+    webhookKeyEncrypted: text(),
+    isActive: boolean().notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("uq_ad_forms_external").on(t.organizationId, t.provider, t.externalFormId),
+    check("ck_ad_forms_provider", sql`${t.provider} in ${adProviders}`),
+  ],
+);
+
+export const campaignSpendDaily = pgTable(
+  "campaign_spend_daily",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    organizationId: organizationId(),
+    // Null while a synced platform campaign is not mapped to a CRM campaign: the spend is kept
+    // and attached when Marketing maps it (campaigns.external_refs), so no day is lost.
+    campaignId: uuid().references(() => campaigns.id, { onDelete: "cascade" }),
+    provider: text().notNull(),
+    adPlatform: text().notNull(),
+    externalCampaignId: text(),
+    externalCampaignName: text(),
+    date: date({ mode: "string" }).notNull(),
+    spendCents: bigint({ mode: "number" }).notNull(),
+    currency: text().notNull().default("PEN"),
+    impressions: integer(),
+    clicks: integer(),
+    platformLeads: integer(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    // Manual rows: one per campaign, platform and day. Synced rows: one per platform campaign.
+    uniqueIndex("uq_campaign_spend_daily")
+      .on(t.campaignId, t.provider, t.adPlatform, t.date)
+      .where(sql`${t.externalCampaignId} is null`),
+    uniqueIndex("uq_campaign_spend_daily_external")
+      .on(t.provider, t.externalCampaignId, t.adPlatform, t.date)
+      .where(sql`${t.externalCampaignId} is not null`),
+    index("idx_campaign_spend_daily_date").on(t.date, t.campaignId),
+    check(
+      "ck_campaign_spend_daily_provider",
+      sql`${t.provider} in ('meta','tiktok','google_ads','manual')`,
+    ),
+    check(
+      "ck_campaign_spend_daily_platform",
+      sql`${t.adPlatform} in ('facebook','instagram','google','tiktok','otra')`,
+    ),
+    check(
+      "ck_campaign_spend_daily_owner",
+      sql`${t.campaignId} is not null or ${t.externalCampaignId} is not null`,
+    ),
+    check("ck_campaign_spend_daily_amount", sql`${t.spendCents} >= 0`),
+    check("ck_campaign_spend_daily_currency", sql`${t.currency} in ('PEN','USD')`),
   ],
 );

@@ -1,12 +1,19 @@
 import type { Permission } from "@tekinsof/core/auth/permissions";
 import { can } from "@tekinsof/core/auth/permissions";
+import { findActiveIntegration } from "@tekinsof/core/integrations/catalog";
 import {
+  BarChart3,
   BookOpen,
   Building2,
+  FileCog,
   FileText,
+  Gauge,
   KanbanSquare,
   LayoutTemplate,
   type LucideIcon,
+  Megaphone,
+  PenLine,
+  Plug,
   Settings,
   UserRound,
   Users,
@@ -34,6 +41,27 @@ const navItems: NavItem[] = [
   { label: "Contactos", href: "/contactos", permission: "accounts.read", icon: UserRound },
   { label: "Catálogo", href: "/catalogo", permission: "catalog.read", icon: BookOpen },
   { label: "Landings", href: "/landings", permission: "landings.write", icon: LayoutTemplate },
+  { label: "Campañas", href: "/campanas", permission: "campaigns.write", icon: Megaphone },
+  { label: "Marketing", href: "/marketing", permission: "dashboard.marketing", icon: BarChart3 },
+  {
+    label: "Integraciones",
+    href: "/configuracion/integraciones",
+    permission: "integrations.manage",
+    icon: Plug,
+  },
+  {
+    label: "Calificación",
+    href: "/configuracion/calificacion",
+    permission: "settings.manage",
+    icon: Gauge,
+  },
+  {
+    label: "Textos de cotización",
+    href: "/configuracion/cotizaciones",
+    permission: "settings.manage",
+    icon: FileCog,
+  },
+  { label: "Mi firma", href: "/configuracion/firma", permission: "quotes.read", icon: PenLine },
   {
     label: "Usuarios",
     href: "/configuracion/usuarios",
@@ -106,6 +134,11 @@ async function denyUnpermittedRoute(actor: SessionActor) {
   const pathname = (await headers()).get("x-pathname") ?? "";
   const item = navItems.find((nav) => pathname === nav.href || pathname.startsWith(`${nav.href}/`));
   if (item && !can(actor, item.permission)) notFound();
+  // The integration pages come from a fixed catalog, so an unknown or upcoming id is a 404 too.
+  const [, , section, integrationId] = pathname.split("/");
+  if (section === "integraciones" && integrationId && !findActiveIntegration(integrationId)) {
+    notFound();
+  }
 }
 
 export default async function AppLayout({ children }: { children: ReactNode }) {

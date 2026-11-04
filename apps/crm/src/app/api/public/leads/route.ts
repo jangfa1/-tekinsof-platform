@@ -1,5 +1,6 @@
 import { getDb } from "@tekinsof/core/db/client";
-import { createPublicLead, publicLeadInput } from "@tekinsof/core/leads/leads";
+import { createPublicLead } from "@tekinsof/core/leads/leads";
+import { publicLeadInput } from "@tekinsof/core/leads/schemas";
 import { err, httpStatus, type Result, validationError } from "@tekinsof/core/result";
 import { getEnv } from "@/lib/env";
 

@@ -1,6 +1,16 @@
 import { type SubmitEvent, useEffect, useId, useRef, useState } from "react";
+import { type Attribution, readAttribution, trackLeadConversion } from "../lib/attribution.ts";
 
-type FieldName = "fullName" | "email" | "phone" | "companyName" | "serviceInterest" | "message";
+type QualifierName = "companySize" | "budgetRange" | "companyType";
+type FieldName =
+  | "fullName"
+  | "email"
+  | "phone"
+  | "companyName"
+  | "serviceInterest"
+  | QualifierName
+  | "message";
+type Choice = { value: string; label: string };
 
 type Props = {
   apiUrl: string;
@@ -13,13 +23,8 @@ type Props = {
   submitLabel?: string;
   consentVersion: string;
   whatsappHref: string;
-};
-
-type Attribution = {
-  utm: Partial<Record<"source" | "medium" | "campaign" | "term" | "content", string>>;
-  gclid?: string;
-  fbclid?: string;
-  referrer?: string;
+  /** Options of the optional scoring questions; without them those fields are skipped. */
+  qualifiers?: Record<QualifierName, Choice[]>;
 };
 
 type TurnstileApi = {
@@ -30,18 +35,16 @@ type TurnstileApi = {
 declare global {
   interface Window {
     turnstile?: TurnstileApi;
-    dataLayer?: unknown[];
   }
 }
 
-const DEFAULT_FIELDS: FieldName[] = [
-  "fullName",
-  "email",
-  "phone",
-  "companyName",
-  "serviceInterest",
-  "message",
-];
+const autoCompletes: Partial<Record<FieldName, string>> = {
+  fullName: "name",
+  email: "email",
+  phone: "tel",
+  companyName: "organization",
+};
+const QUALIFIERS: QualifierName[] = ["companySize", "budgetRange", "companyType"];
 const TURNSTILE_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
 const labels: Record<FieldName, string> = {
   fullName: "Nombre y apellido",
@@ -49,34 +52,14 @@ const labels: Record<FieldName, string> = {
   phone: "Teléfono / WhatsApp",
   companyName: "Empresa",
   serviceInterest: "Servicio de interés",
+  companySize: "Tamaño de la empresa",
+  budgetRange: "Presupuesto estimado",
+  companyType: "Tipo de organización",
   message: "¿En qué te ayudamos?",
 };
 
-// First touch wins: the attribution of the visit that brought the prospect is kept for the session.
-function readAttribution(): Attribution {
-  try {
-    const stored = sessionStorage.getItem("tk_utm");
-    if (stored) return JSON.parse(stored) as Attribution;
-    const query = new URLSearchParams(window.location.search);
-    const pick = (key: string) => query.get(key) || undefined;
-    const attribution: Attribution = {
-      utm: {
-        source: pick("utm_source"),
-        medium: pick("utm_medium"),
-        campaign: pick("utm_campaign"),
-        term: pick("utm_term"),
-        content: pick("utm_content"),
-      },
-      gclid: pick("gclid"),
-      fbclid: pick("fbclid"),
-      referrer: document.referrer || undefined,
-    };
-    sessionStorage.setItem("tk_utm", JSON.stringify(attribution));
-    return attribution;
-  } catch {
-    return { utm: {} };
-  }
-}
+// The labels list every field in the order the default form shows them.
+const DEFAULT_FIELDS = Object.keys(labels) as FieldName[];
 
 function loadTurnstile(): Promise<TurnstileApi> {
   return new Promise((resolve, reject) => {
@@ -106,6 +89,7 @@ export default function LeadForm({
   submitLabel = "Quiero que me contacten",
   consentVersion,
   whatsappHref,
+  qualifiers,
 }: Props) {
   const id = useId();
   const widgetRef = useRef<HTMLDivElement>(null);
@@ -141,7 +125,7 @@ export default function LeadForm({
     }
     setStatus("sending");
     setErrors({});
-    const { utm, gclid, fbclid, referrer } = attribution.current;
+    const { utm, gclid, fbclid, ttclid, referrer } = attribution.current;
     try {
       const res = await fetch(apiUrl, {
         method: "POST",
@@ -152,6 +136,7 @@ export default function LeadForm({
           phone: value("phone"),
           companyName: value("companyName"),
           serviceInterest: value("serviceInterest") ?? defaultService,
+          ...Object.fromEntries(QUALIFIERS.map((name) => [name, value(name)])),
           message: value("message"),
           consent: form.get("consent") === "on",
           consentVersion,
@@ -160,6 +145,7 @@ export default function LeadForm({
           utm,
           gclid,
           fbclid,
+          ttclid,
           referrer,
           turnstileToken: token,
           website: String(form.get("website") ?? ""),
@@ -167,7 +153,7 @@ export default function LeadForm({
       });
       if (res.status === 200 || res.status === 201) {
         setStatus("done");
-        window.dataLayer?.push({ event: "lead_submitted" });
+        trackLeadConversion();
         return;
       }
       if (res.status === 400) {
@@ -202,26 +188,35 @@ export default function LeadForm({
     ) : null;
   const describedBy = (name: string) => (errors[name] ? `${id}-${name}-error` : undefined);
   const required = (name: FieldName) => name === "fullName";
+  const choices: Partial<Record<FieldName, Choice[]>> = {
+    serviceInterest: services.map((service) => ({ value: service.slug, label: service.name })),
+    ...qualifiers,
+  };
+  const shown = fields.filter((name) => !QUALIFIERS.includes(name as QualifierName) || qualifiers);
 
   return (
     <form onSubmit={onSubmit} noValidate className="space-y-4">
-      {fields.map((name) => (
+      {shown.map((name) => (
         <div key={name}>
           <label htmlFor={`${id}-${name}`} className="block text-sm font-medium">
             {labels[name]}
             {required(name) ? " *" : ""}
           </label>
-          {name === "serviceInterest" ? (
+          {choices[name] ? (
             <select
               id={`${id}-${name}`}
               name={name}
-              defaultValue={defaultService ?? ""}
+              defaultValue={name === "serviceInterest" ? (defaultService ?? "") : ""}
+              aria-invalid={errors[name] ? true : undefined}
+              aria-describedby={describedBy(name)}
               className={inputClass}
             >
-              <option value="">Selecciona un servicio</option>
-              {services.map((service) => (
-                <option key={service.slug} value={service.slug}>
-                  {service.name}
+              <option value="">
+                {name === "serviceInterest" ? "Selecciona un servicio" : "Prefiero no indicarlo"}
+              </option>
+              {choices[name].map((choice) => (
+                <option key={choice.value} value={choice.value}>
+                  {choice.label}
                 </option>
               ))}
             </select>
@@ -239,15 +234,7 @@ export default function LeadForm({
               id={`${id}-${name}`}
               name={name}
               type={name === "email" ? "email" : name === "phone" ? "tel" : "text"}
-              autoComplete={
-                name === "fullName"
-                  ? "name"
-                  : name === "email"
-                    ? "email"
-                    : name === "phone"
-                      ? "tel"
-                      : "organization"
-              }
+              autoComplete={autoCompletes[name]}
               required={required(name)}
               aria-invalid={errors[name] ? true : undefined}
               aria-describedby={describedBy(name)}

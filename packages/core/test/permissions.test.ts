@@ -30,6 +30,22 @@ describe("can", () => {
   });
 });
 
+describe("integraciones y dashboard (R2)", () => {
+  it("solo gerencia administra integraciones", () => {
+    expect(can(actor("gerencia"), "integrations.manage")).toBe(true);
+    for (const role of ["ventas", "marketing", "administracion"] as const) {
+      expect(can(actor(role), "integrations.manage")).toBe(false);
+    }
+  });
+
+  it("gerencia y marketing ven el dashboard de marketing", () => {
+    expect(can(actor("gerencia"), "dashboard.marketing")).toBe(true);
+    expect(can(actor("marketing"), "dashboard.marketing")).toBe(true);
+    expect(can(actor("ventas"), "dashboard.marketing")).toBe(false);
+    expect(can(actor("administracion"), "dashboard.marketing")).toBe(false);
+  });
+});
+
 describe("isRole", () => {
   it("rechaza roles desconocidos", () => {
     expect(isRole("admin")).toBe(false);

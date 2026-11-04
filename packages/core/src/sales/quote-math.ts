@@ -53,3 +53,18 @@ export function formatAmount(cents: number): string {
     .replace(/\B(?=(\d{3})+(?!\d))/g, ",");
   return `${sign}${whole}.${(abs % 100).toString().padStart(2, "0")}`;
 }
+
+// Products and services are shown as separate tables with their own subtotal; together they make
+// the quote subtotal that computeQuoteTotals discounts and taxes.
+export function sectionSubtotals(lines: readonly { section: string; lineTotalCents: number }[]): {
+  productsCents: number;
+  servicesCents: number;
+} {
+  let productsCents = 0;
+  let servicesCents = 0;
+  for (const line of lines) {
+    if (line.section === "producto") productsCents += line.lineTotalCents;
+    else servicesCents += line.lineTotalCents;
+  }
+  return { productsCents, servicesCents };
+}

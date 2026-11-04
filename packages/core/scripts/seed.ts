@@ -8,7 +8,15 @@ import { sql } from "drizzle-orm";
 import { landingBlocksSchema } from "../src/cms/block-schema.ts";
 import { company } from "../src/company.ts";
 import { createDb } from "../src/db/client.ts";
-import { appSettings, campaigns, holidays, landingPages, services } from "../src/db/schema.ts";
+import {
+  appSettings,
+  campaigns,
+  DEFAULT_ORGANIZATION_ID,
+  holidays,
+  landingPages,
+  organizations,
+  services,
+} from "../src/db/schema.ts";
 import { demoBlocks as demoContent, holidayRows, serviceRows } from "./seed-catalog.ts";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -25,6 +33,16 @@ const demoBlocks = landingBlocksSchema.parse(demoContent);
 
 const { db, close } = createDb(url);
 try {
+  // The organization every row defaults to (schema.ts, DEFAULT_ORGANIZATION_ID).
+  await db
+    .insert(organizations)
+    .values({
+      id: DEFAULT_ORGANIZATION_ID,
+      name: "Tekinsof Consulting",
+      slug: "tekinsof",
+      legalName: company.legalName,
+    })
+    .onConflictDoNothing({ target: organizations.id });
   await db
     .insert(services)
     .values(serviceRows)

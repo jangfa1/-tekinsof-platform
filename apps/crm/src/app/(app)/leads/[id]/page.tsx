@@ -2,11 +2,15 @@ import { can } from "@tekinsof/core/auth/permissions";
 import { getDb } from "@tekinsof/core/db/client";
 import { activityTypes, addActivity, completeActivity } from "@tekinsof/core/leads/activities";
 import { changeLeadStatus, getLead } from "@tekinsof/core/leads/leads";
+import { listLeadScores } from "@tekinsof/core/scoring/lead-scoring";
+import type { ScoreReason } from "@tekinsof/core/scoring/rules";
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import { GradeBadge, ScoreCard } from "@/components/scoring/score-card";
 import { Badge, Button, Card, EmptyState, Field, Input, Select, Textarea } from "@/components/ui";
 import { authorize, requirePermissionPage } from "@/lib/actor";
+import { qualifyLead } from "./actions";
 
 export const metadata: Metadata = { title: "Lead" };
 
@@ -129,6 +133,7 @@ export default async function LeadPage({
   const query = await searchParams;
   const lead = await getLead(getDb(), id);
   if (!lead) notFound();
+  const [latestScore] = await listLeadScores(getDb(), lead.id);
   const canEdit = can(actor, "leads.update_own", { ownerId: lead.ownerId });
   const options = (nextStatuses[lead.status] ?? []).filter(
     (status) => status !== "nuevo" || can(actor, "leads.update_any"),
@@ -144,6 +149,7 @@ export default async function LeadPage({
         {lead.slaAlertedAt && !lead.firstContactedAt ? (
           <Badge tone="danger">SLA vencido</Badge>
         ) : null}
+        <GradeBadge grade={lead.grade} />
       </div>
       <div aria-live="polite">
         {query.ok ? (
@@ -190,6 +196,15 @@ export default async function LeadPage({
           </dl>
         </Card>
       </div>
+
+      <ScoreCard
+        lead={lead}
+        reasons={(latestScore?.reasons as ScoreReason[] | undefined) ?? []}
+        scoredAt={lead.scoredAt ? dateTime.format(lead.scoredAt) : null}
+        canEdit={canEdit}
+        action={qualifyLead}
+        errors={query}
+      />
 
       {canEdit && options.length > 0 ? (
         <Card title="Cambiar estado">

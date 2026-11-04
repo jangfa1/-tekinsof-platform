@@ -5,6 +5,7 @@ import type { DbOrTx } from "../db/client.ts";
 import { campaigns, leads, users } from "../db/schema.ts";
 import { escapeHtml, type Mailer } from "../integrations/graph.ts";
 import { err, ok, type Result } from "../result.ts";
+import { scoreAndStore } from "../scoring/lead-scoring.ts";
 
 export type LeadCreatedDeps = {
   mailer: Mailer;
@@ -52,6 +53,9 @@ export async function handleLeadCreated(
   leadId: string,
 ): Promise<Result<{ ownerId: string | null; notified: boolean; acknowledged: boolean }>> {
   const now = deps.now();
+  // Graded first so the seller's notice already has it; the grade never changes the assignment.
+  const scored = await scoreAndStore(db, leadId, now, { onlyIfUnscored: true });
+  if (!scored.ok && scored.error.code === "NOT_FOUND") return scored;
   const assigned = await db.transaction(async (tx) => {
     const [lead] = await tx
       .select({ id: leads.id, ownerId: leads.ownerId })

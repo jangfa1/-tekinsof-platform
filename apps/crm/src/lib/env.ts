@@ -3,6 +3,17 @@ import { z } from "zod";
 // The only module in the CRM that reads process.env. Every variable is documented in blueprint §10.
 const optional = z.string().trim().optional();
 
+// Release 2 integration secrets. The defaults let every gate run offline; production refuses them.
+const localDefaults = {
+  INTEGRATIONS_ENCRYPTION_KEY: "bG9jYWwtb25seS1lbmNyeXB0aW9uLWtleS0zMmJ5dGU=",
+  META_APP_SECRET: "local-meta-app-secret",
+  META_VERIFY_TOKEN: "local-meta-verify-token",
+  TIKTOK_WEBHOOK_SECRET: "local-tiktok-webhook-secret",
+} as const;
+const encryptionKey = z
+  .string()
+  .refine((value) => Buffer.from(value, "base64").length === 32, "debe ser 32 bytes en base64");
+
 const schema = z.object({
   DATABASE_URL: z.string().min(1),
   BETTER_AUTH_SECRET: z.string().min(32),
@@ -31,6 +42,14 @@ const schema = z.object({
   VERCEL_DEPLOY_HOOK_URL: optional,
   INNGEST_EVENT_KEY: optional,
   INNGEST_SIGNING_KEY: optional,
+  INTEGRATIONS_ENCRYPTION_KEY: encryptionKey.default(localDefaults.INTEGRATIONS_ENCRYPTION_KEY),
+  META_APP_SECRET: z.string().default(localDefaults.META_APP_SECRET),
+  META_VERIFY_TOKEN: z.string().default(localDefaults.META_VERIFY_TOKEN),
+  META_GRAPH_VERSION: z
+    .string()
+    .regex(/^v\d+\.\d+$/)
+    .default("v24.0"),
+  TIKTOK_WEBHOOK_SECRET: z.string().default(localDefaults.TIKTOK_WEBHOOK_SECRET),
 });
 
 export type Env = z.infer<typeof schema>;
@@ -48,6 +67,7 @@ const requiredInProduction = [
   "VERCEL_DEPLOY_HOOK_URL",
   "INNGEST_EVENT_KEY",
   "INNGEST_SIGNING_KEY",
+  ...(Object.keys(localDefaults) as Array<keyof typeof localDefaults>),
 ] as const;
 
 export function parseEnv(source: Record<string, string | undefined>): Env {
@@ -69,6 +89,9 @@ export function parseEnv(source: Record<string, string | undefined>): Env {
     const turnstile = cleaned.TURNSTILE_SECRET_KEY ?? "1x";
     if (turnstile.startsWith("1x") || turnstile.startsWith("2x")) {
       messages.push("TURNSTILE_SECRET_KEY no puede ser una clave de prueba");
+    }
+    for (const [name, value] of Object.entries(localDefaults)) {
+      if (cleaned[name] === value) messages.push(`${name} no puede usar el valor local`);
     }
   }
 

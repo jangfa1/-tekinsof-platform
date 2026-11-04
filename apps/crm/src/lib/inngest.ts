@@ -8,8 +8,11 @@ import {
   slaSweep,
   triggerSiteDeploy,
 } from "@tekinsof/core/automation/sweeps";
+import { metaLeadsBackfill, purgeInboundEvents } from "@tekinsof/core/capture/backfill";
+import { processInbound } from "@tekinsof/core/capture/process-inbound";
 import { getDb } from "@tekinsof/core/db/client";
 import { createMailer } from "@tekinsof/core/integrations/graph";
+import { syncMetaSpend } from "@tekinsof/core/marketing/meta-spend";
 import { Inngest } from "inngest";
 import { getEnv } from "./env";
 
@@ -90,6 +93,52 @@ const siteDeploy = inngest.createFunction(
     ),
 );
 
+const captureDeps = () => {
+  const env = getEnv();
+  return {
+    meta: { fetch, graphVersion: env.META_GRAPH_VERSION },
+    encryptionKey: Buffer.from(env.INTEGRATIONS_ENCRYPTION_KEY, "base64"),
+    now: () => new Date(),
+  };
+};
+
+// Webhooks from ad platforms (R2). An error Result is transient by contract, so throwing hands the
+// retry to Inngest; permanent problems come back as ok and are recorded on the inbound event.
+const inboundReceived = inngest.createFunction(
+  { id: "process-inbound", triggers: [{ event: "inbound/received" }], retries: 4 },
+  async ({ event, step }) =>
+    step.run("process-inbound", async () => {
+      const inboundEventId = (event.data as { inboundEventId: string }).inboundEventId;
+      const result = await processInbound(getDb(), captureDeps(), inboundEventId);
+      if (!result.ok) throw new Error(result.error.message);
+      return result.data;
+    }),
+);
+
+// Safety net for lost Meta webhooks plus the token health check; an expired token mails Gerencia.
+const metaBackfill = inngest.createFunction(
+  { id: "meta-leads-backfill", triggers: [{ cron: "0 * * * *" }] },
+  async ({ step }) =>
+    step.run("meta-leads-backfill", () =>
+      metaLeadsBackfill(getDb(), { ...deps(), ...captureDeps() }, new Date()),
+    ),
+);
+
+// 06:00 Lima: Meta ad spend of the last 3 days (Meta keeps adjusting recent days).
+const spendSync = inngest.createFunction(
+  { id: "spend-sync", triggers: [{ cron: "0 11 * * *" }] },
+  async ({ step }) =>
+    step.run("spend-sync", () =>
+      syncMetaSpend(getDb(), { ...deps(), ...captureDeps() }, new Date()),
+    ),
+);
+
+// 03:30 Lima: webhook bodies older than 90 days are deleted (personal data).
+const inboundPurge = inngest.createFunction(
+  { id: "inbound-purge", triggers: [{ cron: "30 8 * * *" }] },
+  async ({ step }) => step.run("inbound-purge", () => purgeInboundEvents(getDb(), new Date())),
+);
+
 const approvalRequested = inngest.createFunction(
   { id: "quote-approval-requested", triggers: [{ event: "quote/approval.requested" }] },
   async ({ event, step }) =>
@@ -108,4 +157,8 @@ export const functions = [
   ...(getEnv().MAIL_DRIVER === "log" ? [] : [entra]),
   siteDeploy,
   approvalRequested,
+  inboundReceived,
+  metaBackfill,
+  spendSync,
+  inboundPurge,
 ];

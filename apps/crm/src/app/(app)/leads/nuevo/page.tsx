@@ -1,6 +1,7 @@
 import { getDb } from "@tekinsof/core/db/client";
 import { services } from "@tekinsof/core/db/schema";
-import { createManualLead, manualSources } from "@tekinsof/core/leads/leads";
+import { createManualLead } from "@tekinsof/core/leads/leads";
+import { manualSources } from "@tekinsof/core/leads/schemas";
 import { asc, eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
