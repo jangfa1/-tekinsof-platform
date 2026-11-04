@@ -4,9 +4,9 @@ import { getDb } from "@tekinsof/core/db/client";
 import { createMailer } from "@tekinsof/core/integrations/graph";
 import { sendQuote } from "@tekinsof/core/sales/quote-delivery";
 import { formatAmount, toHundredths } from "@tekinsof/core/sales/quote-math";
+import { getQuote } from "@tekinsof/core/sales/quote-queries";
 import {
   approveQuote,
-  getQuote,
   markQuoteOutcome,
   newQuoteVersion,
   setQuoteItems,

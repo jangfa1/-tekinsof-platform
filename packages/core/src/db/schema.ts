@@ -43,6 +43,9 @@ export const users = pgTable("users", {
   role: text().notNull().default("ventas"),
   isActive: boolean().notNull().default(true),
   receivesLeads: boolean().notNull().default(true),
+  /** Shown in the signature block of the quote PDF. */
+  jobTitle: text(),
+  phone: text(),
   lastAssignedAt: timestamp({ withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
@@ -578,6 +581,14 @@ export const quotes = pgTable(
     validUntil: date({ mode: "string" }),
     notes: text(),
     terms: text(),
+    // Commercial document (q-01): cover letter, conditions and remarks printed on the PDF.
+    intro: text(),
+    paymentTerms: text(),
+    deliveryTime: text(),
+    warranty: text(),
+    scope: text(),
+    exclusions: text(),
+    observations: text(),
     approvedBy: text().references(() => users.id, { onDelete: "set null" }),
     approvedAt: timestamp({ withTimezone: true }),
     sentAt: timestamp({ withTimezone: true }),
@@ -608,6 +619,9 @@ export const quoteItems = pgTable(
       .notNull()
       .references(() => quotes.id, { onDelete: "cascade" }),
     serviceId: uuid().references(() => services.id, { onDelete: "set null" }),
+    section: text().notNull().default("servicio"),
+    itemType: text().notNull().default("implementacion"),
+    partNumber: text(),
     description: text().notNull(),
     quantity: numeric({ precision: 10, scale: 2 }).notNull().default("1"),
     unitPriceCents: bigint({ mode: "number" }).notNull(),
@@ -618,6 +632,12 @@ export const quoteItems = pgTable(
     index("idx_quote_items_quote").on(t.quoteId, t.sortOrder),
     check("ck_quote_items_quantity", sql`${t.quantity} > 0`),
     check("ck_quote_items_price", sql`${t.unitPriceCents} >= 0`),
+    check("ck_quote_items_section", sql`${t.section} in ('producto','servicio')`),
+    check(
+      "ck_quote_items_type",
+      sql`(${t.section} = 'producto' and ${t.itemType} in ('hardware','software','licencia','equipo','suscripcion'))
+        or (${t.section} = 'servicio' and ${t.itemType} in ('implementacion','capacitacion','soporte','consultoria','desarrollo','automatizacion'))`,
+    ),
   ],
 );
 

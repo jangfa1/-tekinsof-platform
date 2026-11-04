@@ -82,7 +82,7 @@ describe("sendQuote", () => {
     const message = mailer.outbox.at(-1);
     expect(message?.from).toBe(seller.email);
     expect(message?.replyTo).toBe(seller.email);
-    expect(message?.attachments?.[0]?.name).toMatch(/^COT-2031-\d{4}-v1\.pdf$/);
+    expect(message?.attachments?.[0]?.name).toMatch(/^CT-2031-\d{5}-v1\.pdf$/);
     expect(message?.attachments?.[0]?.contentType).toBe("application/pdf");
 
     const [row] = await db.select().from(quotes).where(eq(quotes.id, id));

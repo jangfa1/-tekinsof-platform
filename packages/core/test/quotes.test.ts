@@ -56,11 +56,11 @@ afterAll(async () => {
 });
 
 describe("numeración", () => {
-  it("dos cotizaciones seguidas terminan en -0001 y -0002", async () => {
+  it("dos cotizaciones seguidas terminan en -00001 y -00002 con formato CT", async () => {
     const first = await createQuote(db, ventas, { opportunityId }, NOW);
     const second = await createQuote(db, ventas, { opportunityId }, NOW);
-    expect(first.ok && first.data.number).toBe("COT-2026-0001");
-    expect(second.ok && second.data.number).toBe("COT-2026-0002");
+    expect(first.ok && first.data.number).toBe("CT-2026-00001");
+    expect(second.ok && second.data.number).toBe("CT-2026-00002");
     if (first.ok) expect((await quoteRow(first.data.quoteId))?.exchangeRate).toBe("3.7500");
   });
 });
@@ -124,7 +124,9 @@ describe("ciclo de vida", () => {
           .from(quoteItems)
           .where(eq(quoteItems.quoteId, quoteId))
           .orderBy(asc(quoteItems.sortOrder))
-      ).map(({ description, quantity, unitPriceCents, lineTotalCents }) => ({
+      ).map(({ section, itemType, description, quantity, unitPriceCents, lineTotalCents }) => ({
+        section,
+        itemType,
         description,
         quantity,
         unitPriceCents,

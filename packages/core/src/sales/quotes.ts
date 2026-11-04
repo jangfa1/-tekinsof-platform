@@ -1,22 +1,25 @@
-import { and, asc, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, count, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { writeAudit } from "../audit/audit.ts";
 import { type Actor, can, type Permission } from "../auth/permissions.ts";
 import type { DbOrTx } from "../db/client.ts";
 import {
   appSettings,
-  companies,
-  contacts,
   opportunities,
   outbox,
   quoteItems,
   quoteSequences,
   quotes,
   services,
-  users,
 } from "../db/schema.ts";
 import { err, ok, type Result, validationError } from "../result.ts";
 import { limaDate } from "../time/business-hours.ts";
+import {
+  getQuoteDefaults,
+  isTypeOfSection,
+  quoteSections,
+  typesBySection,
+} from "./quote-document.ts";
 import {
   computeQuoteTotals,
   lineTotalCents,
@@ -37,7 +40,6 @@ export const quoteStatuses = [
 ] as const;
 export type QuoteStatus = (typeof quoteStatuses)[number];
 export const VALIDITY_DAYS = 15;
-const PAGE_SIZE = 25;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const blank = (value: unknown) => (value === "" || value === null ? undefined : value);
@@ -98,6 +100,11 @@ export const createQuoteInput = z.object({
   terms: z.preprocess(blank, z.string().trim().max(4000).optional()),
 });
 
+// CT-2026-00001. Quotes numbered before q-01 keep their COT-2026-0001 form; the yearly sequence
+// is shared, so numbers keep growing without gaps across both formats.
+export const quoteNumber = (year: number, sequence: number) =>
+  `CT-${year}-${String(sequence).padStart(5, "0")}`;
+
 export async function createQuote(
   db: DbOrTx,
   actor: Actor,
@@ -119,6 +126,7 @@ export async function createQuote(
     .from(appSettings)
     .where(eq(appSettings.key, "exchange_rate_default"));
   const defaultRate = (setting?.value as { usdToPen?: string } | undefined)?.usdToPen ?? "3.7500";
+  const documentDefaults = await getQuoteDefaults(db);
 
   return db.transaction(async (tx) => {
     const year = Number(limaDate(now).slice(0, 4));
@@ -131,10 +139,11 @@ export async function createQuote(
         set: { lastNumber: sql`${quoteSequences.lastNumber} + 1` },
       })
       .returning({ lastNumber: quoteSequences.lastNumber });
-    const number = `COT-${year}-${String(sequence?.lastNumber ?? 0).padStart(4, "0")}`;
+    const number = quoteNumber(year, sequence?.lastNumber ?? 0);
     const [row] = await tx
       .insert(quotes)
       .values({
+        ...documentDefaults,
         ...data,
         number,
         opportunityId,
@@ -159,6 +168,9 @@ export const quoteItemsInput = z.object({
     .array(
       z.object({
         serviceId: z.preprocess(blank, z.uuid().optional()),
+        section: z.enum(quoteSections).default("servicio"),
+        itemType: z.preprocess(blank, z.string().optional()),
+        partNumber: z.preprocess(blank, z.string().trim().max(60).optional()),
         description: z.preprocess(blank, z.string().trim().max(500).optional()),
         quantity: decimal("Cantidad inválida").refine(
           (v) => !isDecimal(v) || toHundredths(v) > 0,
@@ -167,7 +179,13 @@ export const quoteItemsInput = z.object({
         unitPriceCents: z.number().int().min(0).optional(),
       }),
     )
-    .max(50),
+    .max(80)
+    .superRefine((items, ctx) => {
+      for (const [index, item] of items.entries()) {
+        if (item.itemType && !isTypeOfSection(item.section, item.itemType))
+          ctx.addIssue({ code: "custom", path: [index, "itemType"], message: "Tipo inválido" });
+      }
+    }),
 });
 
 export async function setQuoteItems(
@@ -203,6 +221,9 @@ export async function setQuoteItems(
       ...line,
       quoteId,
       serviceId: item.serviceId ?? null,
+      section: item.section,
+      itemType: item.itemType ?? typesBySection[item.section][0],
+      partNumber: item.section === "producto" ? (item.partNumber ?? null) : null,
       description,
       lineTotalCents: lineTotalCents(line),
       sortOrder: index,
@@ -362,69 +383,4 @@ export async function newQuoteVersion(
     await audit(tx, actor, "quote.versioned", row.id, { from: id, version: version + 1 });
     return ok({ quoteId: row.id, version: version + 1 });
   });
-}
-
-const listColumns = {
-  id: quotes.id,
-  number: quotes.number,
-  version: quotes.version,
-  status: quotes.status,
-  currency: quotes.currency,
-  totalCents: quotes.totalCents,
-  validUntil: quotes.validUntil,
-  createdAt: quotes.createdAt,
-  opportunityTitle: opportunities.title,
-  companyName: companies.name,
-  ownerName: users.name,
-};
-
-export async function listQuotes(db: DbOrTx, opts: { status?: string; page?: number }) {
-  const where = opts.status ? eq(quotes.status, opts.status) : undefined;
-  const page = Math.max(1, Math.floor(opts.page ?? 1));
-  const [rows, [total]] = await Promise.all([
-    db
-      .select(listColumns)
-      .from(quotes)
-      .innerJoin(opportunities, eq(quotes.opportunityId, opportunities.id))
-      .leftJoin(companies, eq(quotes.companyId, companies.id))
-      .leftJoin(users, eq(quotes.ownerId, users.id))
-      .where(where)
-      .orderBy(desc(quotes.createdAt))
-      .limit(PAGE_SIZE)
-      .offset((page - 1) * PAGE_SIZE),
-    db.select({ n: count() }).from(quotes).where(where),
-  ]);
-  return {
-    rows,
-    total: total?.n ?? 0,
-    pageCount: Math.max(1, Math.ceil((total?.n ?? 0) / PAGE_SIZE)),
-  };
-}
-
-export async function getQuote(db: DbOrTx, id: string) {
-  if (!z.uuid().safeParse(id).success) return null;
-  const [quote] = await db.select().from(quotes).where(eq(quotes.id, id));
-  if (!quote) return null;
-  const [items, [opportunity], [company], [contact], [owner]] = await Promise.all([
-    db
-      .select()
-      .from(quoteItems)
-      .where(eq(quoteItems.quoteId, id))
-      .orderBy(asc(quoteItems.sortOrder)),
-    db.select().from(opportunities).where(eq(opportunities.id, quote.opportunityId)),
-    quote.companyId ? db.select().from(companies).where(eq(companies.id, quote.companyId)) : [],
-    quote.contactId ? db.select().from(contacts).where(eq(contacts.id, quote.contactId)) : [],
-    db
-      .select({ id: users.id, name: users.name, email: users.email })
-      .from(users)
-      .where(eq(users.id, quote.ownerId)),
-  ]);
-  return {
-    ...quote,
-    items,
-    opportunity: opportunity ?? null,
-    company: company ?? null,
-    contact: contact ?? null,
-    owner: owner ?? null,
-  };
 }

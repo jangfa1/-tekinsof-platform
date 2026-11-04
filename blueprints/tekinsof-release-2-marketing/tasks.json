@@ -334,5 +334,53 @@
     ],
     "checkpoint": "r2-step-12-dashboard-ui",
     "status": "done"
+  },
+  {
+    "id": "q-01",
+    "title": "Quote document core (B2B commercial proposal PDF)",
+    "dependencies": [
+      "r2-12"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN a quote is created THE SYSTEM SHALL number it CT-<year>-<5 digits> and copy the cover letter, commercial conditions and remarks from app_settings.quote_defaults (built-in texts if unset).",
+      "WHEN items are saved THE SYSTEM SHALL store each with section producto|servicio, a type valid for that section and a part number only for products, and SHALL reject a type from the other section with VALIDATION_ERROR.",
+      "WHEN a non-draft quote's texts are edited THE SYSTEM SHALL return INVALID_TRANSITION; a new version SHALL keep the texts.",
+      "WHEN the PDF is rendered THE SYSTEM SHALL show header (mark, number, issue date, version), client data, cover letter, separate products and services tables with subtotals, an economic summary with highlighted TOTAL, commercial conditions, remarks, signature and 'Página X de Y' on every page.",
+      "WHEN a non-Gerencia user changes the quote defaults or another user's signature THE SYSTEM SHALL return FORBIDDEN."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/core test test/quote-document.test.ts",
+      "pnpm --filter @tekinsof/core test test/schema.test.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "q-step-01-quote-document-core",
+    "status": "pending"
+  },
+  {
+    "id": "q-02",
+    "title": "Quote document UI (editor sections, conditions, defaults, signature, WhatsApp)",
+    "dependencies": [
+      "q-01"
+    ],
+    "priority": "p1",
+    "acceptance": [
+      "WHEN a seller edits a draft quote THE SYSTEM SHALL show the tables \"Productos\" and \"Servicios\" with type and part number, and a \"Condiciones comerciales\" section prefilled with the defaults.",
+      "WHEN a Gerencia user opens /configuracion/cotizaciones THE SYSTEM SHALL let them edit the default texts; other roles SHALL get 404.",
+      "WHEN a user opens /configuracion/firma THE SYSTEM SHALL let them edit their own job title and phone.",
+      "WHEN a sent or approved quote has a contact phone THE SYSTEM SHALL offer \"Enviar por WhatsApp\", which downloads the PDF and opens wa.me with a ready message; no public link is created.",
+      "WHEN the quote pages are scanned with axe THE SYSTEM SHALL report zero violations."
+    ],
+    "verify": [
+      "pnpm --filter @tekinsof/crm build",
+      "pnpm --filter @tekinsof/crm test:e2e e2e/quotes.spec.ts",
+      "pnpm typecheck",
+      "pnpm lint",
+      "pnpm test"
+    ],
+    "checkpoint": "q-step-02-quote-document-ui",
+    "status": "pending"
   }
 ]
